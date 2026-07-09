@@ -1,3 +1,5 @@
+import { AppStatus } from "../generated/enums";
+
 export interface CreateAppPayload {
   userId: string;
   name: string;
@@ -19,4 +21,10 @@ export interface AdminQueryApp {
     limit?: number
     search?: string
     sortOrder?: 'asc' | 'desc'
+  }
+
+  export interface UpdateAppPayload {
+    name?: string     
+    repoUrl?: string
+    status?: AppStatus
   }

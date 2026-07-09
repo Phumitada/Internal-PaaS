@@ -1,5 +1,5 @@
 import { prisma } from '../db/prisma'
-import type { AdminQueryApp, CreateAppPayload, QueryApp } from '../types/app.type'
+import type { AdminQueryApp, CreateAppPayload, QueryApp, UpdateAppPayload } from '../types/app.type'
 
 export const appService = {
     createApp: async (payload:CreateAppPayload ) => {
@@ -121,6 +121,19 @@ export const appService = {
         if(app.userId !== userId && role !== 'ADMIN') throw new Error('Forbidden')
 
         return app;
+    },
+
+    updateApp: async (id:string,userId:string,role:string,payload:UpdateAppPayload) => {
+        const app = await prisma.app.findUnique({
+            where:{id}
+        })
+        if(!app) throw new Error("App not found")
+        if(app.userId !== userId && role !== 'ADMIN') throw new Error('Forbidden')
+        const update = await prisma.app.update({
+            where:{id},
+            data: payload,
+        })
+        return update
     },
 
     deleteApp: async (id:string,userId:string) => {
