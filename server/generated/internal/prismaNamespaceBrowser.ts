@@ -51,7 +51,10 @@ export const AnyNull = runtime.AnyNull
 
 
 export const ModelName = {
-  User: 'User'
+  User: 'User',
+  App: 'App',
+  Deploy: 'Deploy',
+  Container: 'Container'
 } as const
 
 export type ModelName = (typeof ModelName)[keyof typeof ModelName]
@@ -82,6 +85,52 @@ export const UserScalarFieldEnum = {
 } as const
 
 export type UserScalarFieldEnum = (typeof UserScalarFieldEnum)[keyof typeof UserScalarFieldEnum]
+
+
+export const AppScalarFieldEnum = {
+  id: 'id',
+  name: 'name',
+  repoUrl: 'repoUrl',
+  domain: 'domain',
+  runtime: 'runtime',
+  port: 'port',
+  status: 'status',
+  userId: 'userId',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type AppScalarFieldEnum = (typeof AppScalarFieldEnum)[keyof typeof AppScalarFieldEnum]
+
+
+export const DeployScalarFieldEnum = {
+  id: 'id',
+  status: 'status',
+  repoUrl: 'repoUrl',
+  commit: 'commit',
+  log: 'log',
+  appId: 'appId',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type DeployScalarFieldEnum = (typeof DeployScalarFieldEnum)[keyof typeof DeployScalarFieldEnum]
+
+
+export const ContainerScalarFieldEnum = {
+  id: 'id',
+  containerId: 'containerId',
+  name: 'name',
+  imageId: 'imageId',
+  port: 'port',
+  status: 'status',
+  appId: 'appId',
+  deployId: 'deployId',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type ContainerScalarFieldEnum = (typeof ContainerScalarFieldEnum)[keyof typeof ContainerScalarFieldEnum]
 
 
 export const SortOrder = {

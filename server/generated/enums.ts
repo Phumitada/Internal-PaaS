@@ -15,3 +15,34 @@ export const Role = {
 } as const
 
 export type Role = (typeof Role)[keyof typeof Role]
+
+
+export const AppStatus = {
+  IDLE: 'IDLE',
+  BUILDING: 'BUILDING',
+  RUNNING: 'RUNNING',
+  STOPPED: 'STOPPED',
+  ERROR: 'ERROR'
+} as const
+
+export type AppStatus = (typeof AppStatus)[keyof typeof AppStatus]
+
+
+export const DeployStatus = {
+  PENDING: 'PENDING',
+  BUILDING: 'BUILDING',
+  SUCCESS: 'SUCCESS',
+  FAILED: 'FAILED'
+} as const
+
+export type DeployStatus = (typeof DeployStatus)[keyof typeof DeployStatus]
+
+
+export const ContainerStatus = {
+  CREATED: 'CREATED',
+  RUNNING: 'RUNNING',
+  STOPPED: 'STOPPED',
+  REMOVED: 'REMOVED'
+} as const
+
+export type ContainerStatus = (typeof ContainerStatus)[keyof typeof ContainerStatus]
