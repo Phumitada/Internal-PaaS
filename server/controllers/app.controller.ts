@@ -47,9 +47,20 @@ export const appController = {
     }
   },
 
+  getAllApps: async (req:Request,res:Response) => {
+    try {
+        const result = await appService.getAllApps(req.query)
+        res.status(200).json({succes:true,data:result})
+    } catch (error) {
+        res.status(400).json({success:false,message:error.message})
+    }
+  },
+
   getAppById: async (req:Request,res:Response) => {
     try {
-        const app = await appService.getAppById(req.params.id)
+        const userId = (req as AuthRequest).user?.userId
+        const role = (req as AuthRequest).user?.role
+        const app = await appService.getAppById(req.params.id,userId!,role!)
         res.status(200).json({success:true, data:app})
     } catch (error) {
         res.status(400).json({success:false,message:error.message})
@@ -58,7 +69,18 @@ export const appController = {
 
   deleteApp: async (req:Request,res:Response) => {
     try{
-        await appService.deleteApp(req.params.id)
+        const userId = (req as AuthRequest).user?.userId
+        await appService.deleteApp(req.params.id,userId!)
+        res.status(200).json({success:true,message:"Delete success"})
+    } catch (error) {
+        res.status(400).json({success:false,message:error.message})
+    }
+  },
+
+  adminDeleteApp: async (req:Request,res:Response) => {
+    try {
+        await appService.adminDeleteApp(req.params.id)
+        res.status(200).json({success:true,message:"Delete success"})
     } catch (error) {
         res.status(400).json({success:false,message:error.message})
     }

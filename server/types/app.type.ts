@@ -12,3 +12,11 @@ export interface QueryApp {
     search?: string;
     sortOrder?: 'asc' | 'desc';
 }
+
+export interface AdminQueryApp {
+    status?: string   
+    page?: number
+    limit?: number
+    search?: string
+    sortOrder?: 'asc' | 'desc'
+  }
