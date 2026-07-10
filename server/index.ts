@@ -2,8 +2,10 @@ import express from 'express'
 import cors from 'cors'
 import dotenv from 'dotenv'
 import cookieParser from 'cookie-parser'
+import './workers/build.worker'
 import authRoutes from './routes/auth.routes'
 import appRoutes from './routes/app.routes'
+import webhookRouter from './routes/webhook.routes'
 
 dotenv.config()
 
@@ -22,9 +24,12 @@ app.get('/api/health', (req, res) => {
   res.json({ status: 'ok' })
 })
 
+// Routes
 app.use('/api/auth', authRoutes)
 app.use('/api/app', appRoutes)
+app.use('/api/webhook',webhookRouter)
 
+// Execute
 app.listen(PORT, () => {
   console.log(`Server running at http://localhost:${PORT}`)
 })

@@ -766,7 +766,8 @@ export const AppScalarFieldEnum = {
   status: 'status',
   userId: 'userId',
   createdAt: 'createdAt',
-  updatedAt: 'updatedAt'
+  updatedAt: 'updatedAt',
+  rootDir: 'rootDir'
 } as const
 
 export type AppScalarFieldEnum = (typeof AppScalarFieldEnum)[keyof typeof AppScalarFieldEnum]

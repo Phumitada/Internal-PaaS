@@ -27,4 +27,5 @@ export interface AdminQueryApp {
     name?: string     
     repoUrl?: string
     status?: AppStatus
+    rootDir?: string
   }

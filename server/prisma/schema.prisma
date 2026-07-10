@@ -41,6 +41,7 @@ model App {
   updatedAt DateTime   @updatedAt
   deploys   Deploy[]
   container Container?
+  rootDir String @default(".")
 
   @@map("apps")
 }
