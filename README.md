@@ -1,231 +1,287 @@
-# React-Express-Template
+# Internal PaaS
 
-## Professional Web Development Template
+## 🚀 Internal Platform as a Service
 
-A modern, production-ready React + Express template showcasing professional web development practices with complete authentication system.
+A self-hosted PaaS solution for deploying and managing applications internally. Built with React, Express, PostgreSQL, Redis, and Docker - perfect for teams who want to control their own deployment infrastructure.
 
-## 🚀 Features
+## ✨ Features
 
-### 🔐 Authentication System
-- **JWT Authentication** with refresh tokens
-- **Persistent Sessions** using localStorage
-- **Protected Routes** with middleware
-- **Silent Error Handling** (no 401 console logs)
-- **Auto Token Refresh** on expiration
+### 🎯 Application Management
+- **Git-based Deployments** - Connect your repositories and deploy with a single click
+- **Build System** - Automated build pipeline with configurable runtimes
+- **Container Orchestration** - Docker container management for each application
+- **Custom Domains** - Assign custom domains to your applications
+- **Port Configuration** - Configure application ports dynamically
 
-### 🎨 Modern UI/UX
-- **Responsive Design** with Tailwind CSS
-- **Component Library** using shadcn/ui
-- **Dark Mode Support** ready
-- **Professional Layouts** (Auth/Main)
-- **Smooth Animations** and transitions
+### 🔐 Authentication & Security
+- **JWT Authentication** - Secure token-based authentication
+- **Role-Based Access** - User and admin roles
+- **Protected Routes** - Middleware-protected API endpoints
+- **Refresh Tokens** - Automatic token refresh for seamless sessions
 
-### 🛠️ Technology Stack
-- **Frontend**: React 18, TypeScript, Tailwind CSS
-- **State Management**: Zustand with persistence
-- **Backend**: Express.js, JWT authentication
-- **UI Components**: shadcn/ui, Lucide Icons
-- **Form Handling**: React Hook Form + Zod validation
-- **HTTP Client**: Axios with interceptors
-- **Query Management**: TanStack Query
+### 🔄 CI/CD Integration
+- **Webhook Support** - Git webhook integration for automatic deployments
+- **Build Queues** - Redis-powered job queue with BullMQ
+- **Deploy History** - Track deployment status and logs
+- **Rollback Support** - Easy rollback to previous deployments
 
-### 📱 Responsive Features
-- **Mobile-First** design approach
-- **Hamburger Menu** for navigation
-- **Adaptive Layouts** per screen size
-- **Touch-Friendly** interactions
+### 📊 Monitoring & Management
+- **Real-time Status** - Track application status (IDLE, BUILDING, RUNNING, STOPPED, ERROR)
+- **Container Management** - Start, stop, and monitor Docker containers
+- **Deploy Logs** - View build and deployment logs
+- **Health Checks** - API health monitoring
+
+## 🛠️ Technology Stack
+
+### Frontend
+- **React 18** - Modern React with hooks
+- **TypeScript** - Type-safe development
+- **Tailwind CSS** - Utility-first styling
+- **shadcn/ui** - Beautiful UI components
+- **Zustand** - Lightweight state management
+- **React Router** - Client-side routing
+- **TanStack Query** - Server state management
+- **Axios** - HTTP client with interceptors
+
+### Backend
+- **Express.js** - Fast and minimalist web framework
+- **TypeScript** - Type-safe backend development
+- **Prisma** - Modern ORM for PostgreSQL
+- **PostgreSQL** - Relational database
+- **Redis** - In-memory data store for queues
+- **BullMQ** - Redis-based queue for background jobs
+- **Dockerode** - Docker API for container management
+- **Simple Git** - Git operations for deployments
+- **JWT** - JSON Web Token authentication
+- **Zod** - Schema validation
+
+### Infrastructure
+- **Docker** - Containerization
+- **Docker Compose** - Multi-container orchestration
+- **PostgreSQL 15** - Database
+- **Redis 7** - Cache and queue
 
 ## 📁 Project Structure
 
 ```
-📁 client/
-├── 📁 src/
-│   ├── 📁 components/
-│   │   ├── 📁 ui/          # shadcn/ui components
-│   │   └── 📄 Navbar.tsx    # Main navigation
-│   ├── 📁 hooks/
-│   │   ├── 📄 useAuth.ts     # Authentication logic
-│   │   ├── 📄 useErrorHandler.ts # Error handling
-│   │   └── 📄 useSilentAuth.ts # Console filtering
-│   ├── 📁 layout/
-│   │   ├── 📄 MainLayout.tsx # Layout with navbar
-│   │   └── 📄 AuthLayout.tsx  # Layout without navbar
-│   ├── 📁 pages/
-│   │   ├── 📄 home.tsx       # Landing page
-│   │   ├── 📄 login.tsx      # Login form
-│   │   ├── 📄 register.tsx   # Registration form
-│   │   └── 📄 protected.tsx  # Admin dashboard
-│   ├── 📁 stores/
-│   │   └── 📄 auth.store.ts  # Zustand store with persistence
-│   ├── 📁 api/
-│   │   ├── 📄 client.ts      # Axios configuration
-│   │   └── 📁 services/
-│   │       └── 📄 auth.service.ts # Auth API calls
-│   └── 📁 utils/
-│       └── 📄 console-filter.ts # 401 error filtering
-├── 📄 package.json
-├── 📄 tailwind.config.js
-├── 📄 tsconfig.json
-└── 📄 vite.config.ts
+Internal-PaaS/
+├── 📁 client/                 # React frontend
+│   ├── 📁 src/
+│   │   ├── 📁 components/     # Reusable components
+│   │   ├── 📁 hooks/          # Custom React hooks
+│   │   ├── � layout/         # Layout components
+│   │   ├── 📁 pages/          # Page components
+│   │   ├── � stores/         # Zustand state stores
+│   │   ├── � api/            # API client and services
+│   │   └── � utils/          # Utility functions
+│   ├── � package.json
+│   └── 📄 vite.config.ts
+├── 📁 server/                 # Express backend
+│   ├── 📁 controllers/        # Route controllers
+│   ├── � routes/            # API routes
+│   ├── � services/          # Business logic
+│   ├── � middleware/        # Express middleware
+│   ├── � queues/            # BullMQ job queues
+│   ├── 📁 workers/           # Background job workers
+│   ├── 📁 prisma/            # Database schema and migrations
+│   ├── 📁 lib/               # Shared libraries
+│   ├── 📁 types/             # TypeScript types
+│   ├── 📁 validator/         # Request validation schemas
+│   └── 📄 index.ts           # Server entry point
+├── 📄 docker-compose.yml     # Docker services configuration
+└── 📄 README.md
 ```
 
-## 🛠️ Quick Start
+## � Quick Start
 
 ### Prerequisites
 - Node.js 18+
-- npm or yarn
+- Docker and Docker Compose
+- Git
 
 ### Installation
 
 1. **Clone the repository**
    ```bash
    git clone <repository-url>
-   cd professional-web-template
+   cd Internal-PaaS
    ```
 
-2. **Install dependencies**
+2. **Start infrastructure services**
    ```bash
-   npm install
-   # or
-   yarn install
+   docker-compose up -d
    ```
 
-3. **Start development server**
+3. **Install backend dependencies**
+   ```bash
+   cd server
+   npm install
+   ```
+
+4. **Configure environment variables**
+   ```bash
+   cp .env.example .env
+   # Edit .env with your configuration
+   ```
+
+5. **Run database migrations**
+   ```bash
+   npx prisma migrate dev
+   ```
+
+6. **Start backend server**
    ```bash
    npm run dev
-   # or
-   yarn dev
    ```
 
-4. **Open your browser**
-   Navigate to `http://localhost:5173`
+7. **Install frontend dependencies**
+   ```bash
+   cd ../client
+   npm install
+   ```
+
+8. **Start frontend development server**
+   ```bash
+   npm run dev
+   ```
+
+9. **Access the application**
+   - Frontend: `http://localhost:5173`
+   - Backend API: `http://localhost:5001`
+
+## 🔧 Configuration
+
+### Environment Variables
+
+#### Server (.env)
+```env
+DATABASE_URL="postgresql://admin:password123@localhost:5432/appdb"
+REDIS_URL="redis://localhost:6379"
+JWT_SECRET="your-jwt-secret"
+JWT_REFRESH_SECRET="your-refresh-secret"
+PORT=5001
+```
+
+#### Client (.env)
+```env
+VITE_API_URL=http://localhost:5001/api
+```
+
+## 📊 Database Schema
+
+The application uses the following main entities:
+
+- **User** - User accounts with authentication
+- **App** - Application configurations and metadata
+- **Deploy** - Deployment records and logs
+- **Container** - Docker container information
 
 ## 🔐 Authentication Flow
 
-### 1. User Registration
-- Visit `/register`
-- Fill in email and password
-- Account created with JWT tokens
-- Redirect to admin dashboard
+1. **Registration** - Users create accounts with email/password
+2. **Login** - Credentials exchanged for JWT access and refresh tokens
+3. **Token Refresh** - Automatic refresh using refresh tokens
+4. **Protected Access** - API routes protected by authentication middleware
 
-### 2. User Login
-- Visit `/login`
-- Enter credentials
-- Tokens stored in localStorage
-- Redirect to admin dashboard
+## 🚢 Deployment Workflow
 
-### 3. Protected Access
-- All protected routes require authentication
-- Automatic token refresh on expiration
-- Silent redirect on token failure
+1. **Create App** - Register a new application with repository URL
+2. **Configure** - Set runtime, port, and domain settings
+3. **Deploy** - Trigger build and deployment
+4. **Build** - Worker clones repo, builds Docker image
+5. **Run** - Container starts with configured settings
+6. **Monitor** - Track status and logs in dashboard
 
-### 4. Session Persistence
-- User state persists across browser sessions
-- Automatic restoration on page refresh
-- Secure logout clears all data
+## 🎨 Frontend Features
 
-## 🎯 Key Demonstrations
+- **Dashboard** - Overview of all applications
+- **App Management** - Create, edit, delete applications
+- **Deploy History** - View deployment logs and status
+- **Container Control** - Start/stop containers
+- **Responsive Design** - Works on desktop and mobile
+- **Dark Mode** - Toggle between light/dark themes
 
-### ✅ Production-Ready Architecture
-- **Scalable folder structure**
-- **Separation of concerns**
-- **Reusable components**
-- **Type safety throughout**
+## � API Endpoints
 
-### ✅ Security Best Practices
-- **JWT token management**
-- **Input validation** with Zod
-- **Error boundary handling**
-- **XSS protection** built-in
+### Authentication
+- `POST /api/auth/register` - Register new user
+- `POST /api/auth/login` - Login user
+- `POST /api/auth/refresh` - Refresh access token
+- `POST /api/auth/logout` - Logout user
 
-### ✅ Performance Optimizations
-- **Lazy loading** components
-- **Efficient state management**
-- **Optimized bundle size**
-- **Smooth animations**
+### Applications
+- `GET /api/app` - Get all user applications
+- `POST /api/app` - Create new application
+- `GET /api/app/:id` - Get application details
+- `PUT /api/app/:id` - Update application
+- `DELETE /api/app/:id` - Delete application
+- `POST /api/app/:id/deploy` - Trigger deployment
 
-### ✅ Developer Experience
-- **Hot module replacement**
-- **ESLint + Prettier** configured
-- **TypeScript** strict mode
-- **Clear documentation**
+### Webhooks
+- `POST /api/webhook` - Git webhook handler
 
-## 📱 Responsive Design
+## 🐳 Docker Services
 
-- **Desktop**: Full navigation with all features
-- **Tablet**: Adaptive layout with touch support
-- **Mobile**: Hamburger menu with optimized flow
+The project includes Docker Compose configuration for:
 
-## 🚀 Deployment
+- **PostgreSQL 15** - Primary database
+- **Redis 7** - Cache and job queue
 
-### Build for Production
+## 📝 Development
+
+### Backend Development
 ```bash
+cd server
+npm run dev          # Start development server with hot reload
+npm run build        # Build TypeScript
+npm run studio       # Open Prisma Studio
+```
+
+### Frontend Development
+```bash
+cd client
+npm run dev          # Start Vite dev server
+npm run build        # Build for production
+npm run preview      # Preview production build
+npm run lint         # Run ESLint
+npm run format       # Format code with Prettier
+```
+
+## 🚀 Production Deployment
+
+### Build Frontend
+```bash
+cd client
 npm run build
 ```
 
-### Environment Variables
-Create `.env` file in root:
-```env
-VITE_API_URL=http://localhost:3000/api
+### Build Backend
+```bash
+cd server
+npm run build
 ```
 
-## 🎨 Customization
-
-### Change Theme Colors
-Edit `tailwind.config.js`:
-```js
-theme: {
-  extend: {
-    colors: {
-      primary: {
-        DEFAULT: 'hsl(var(--primary))',
-        hover: '#YOUR_COLOR',
-      }
-    }
-  }
-}
+### Start Production Services
+```bash
+docker-compose up -d
+cd server
+node dist/index.js
 ```
-
-### Add New Pages
-1. Create component in `src/pages/`
-2. Add route in `src/App.tsx`
-3. Use appropriate layout (MainLayout/AuthLayout)
-
-## 📚 Learning Resources
-
-This template demonstrates:
-- **Modern React patterns** (hooks, context, composition)
-- **State management** with Zustand
-- **Form handling** with React Hook Form
-- **Authentication flows** with JWT
-- **Responsive design** with Tailwind CSS
-- **TypeScript** best practices
-- **API integration** with Axios
 
 ## 🤝 Contributing
 
 1. Fork the repository
-2. Create feature branch
-3. Make your changes
-4. Add tests if applicable
-5. Submit pull request
+2. Create a feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
 
 ## 📄 License
 
-MIT License - feel free to use this template for your projects!
+MIT License - feel free to use this project for your internal PaaS needs!
 
----
+## � Acknowledgments
 
-**Perfect for:**
-- 🚀 **Portfolio websites**
-- 💼 **Professional resumes**
-- 🏗 **Project templates**
-- 📚 **Learning purposes**
-- 🛠️ **Development demos**
-
-**Showcases:**
-- ✅ Modern web development skills
-- ✅ Authentication implementation
-- ✅ Responsive design capabilities
-- ✅ Production-ready codebase
-- ✅ Professional project structure
+- Built with modern web technologies
+- Inspired by platforms like Heroku, Vercel, and Railway
+- Designed for internal team deployment needs
