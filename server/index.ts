@@ -6,7 +6,9 @@ import './workers/build.worker'
 import authRoutes from './routes/auth.routes'
 import appRoutes from './routes/app.routes'
 import webhookRouter from './routes/webhook.routes'
-
+import deployRouter from './routes/deploy.routes'
+import { setupSocket } from './lib/socket'
+ 
 dotenv.config()
 
 const app = express()
@@ -28,8 +30,11 @@ app.get('/api/health', (req, res) => {
 app.use('/api/auth', authRoutes)
 app.use('/api/app', appRoutes)
 app.use('/api/webhook',webhookRouter)
+app.use('/api/deploy',deployRouter)
 
 // Execute
-app.listen(PORT, () => {
+const server = app.listen(PORT, () => {   
   console.log(`Server running at http://localhost:${PORT}`)
 })
+
+setupSocket(server)

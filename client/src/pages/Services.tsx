@@ -1,0 +1,742 @@
+import { useState,useRef,useEffect } from "react"
+import { Link, useParams, useNavigate } from "react-router-dom"
+import {
+  Plus, Search, ArrowLeft, GitBranch, MoreHorizontal,
+  Play, Square, Trash2, Settings, ExternalLink, Terminal, RefreshCw,
+} from "lucide-react"
+import { useAuth } from "@/hooks/useAuth"
+import {
+  useGetApps, useGetAppById, useCreateApp, useDeleteApp, useUpdateApp,
+} from "@/hooks/useApp"
+import { api } from "@/api/client"
+import { toast } from "sonner"
+import { useGetDeploys, useRedeploy } from "@/hooks/useDeploy"
+import { Pagination } from "@/components/ui"
+
+// ─── Shared ───────────────────────────────────────────────────────────────────
+
+const STATUS_DOT: Record<string, string> = {
+  RUNNING:  "bg-emerald-500",
+  BUILDING: "bg-yellow-400 animate-pulse",
+  STOPPED:  "bg-zinc-300",
+  ERROR:    "bg-red-500",
+  IDLE:     "bg-zinc-300",
+}
+
+const STATUS_TEXT: Record<string, string> = {
+  RUNNING:  "text-emerald-600",
+  BUILDING: "text-yellow-600",
+  STOPPED:  "text-zinc-400",
+  ERROR:    "text-red-500",
+  IDLE:     "text-zinc-400",
+}
+
+function StatusBadge({ status }: { status: string }) {
+  const s = status?.toUpperCase() || "IDLE"
+  return (
+    <span className="inline-flex items-center gap-1.5">
+      <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${STATUS_DOT[s] ?? "bg-zinc-300"}`} />
+      <span className={`text-xs font-mono ${STATUS_TEXT[s] ?? "text-zinc-400"}`}>{s.toLowerCase()}</span>
+    </span>
+  )
+}
+
+function AppMenu({ appId, status, onDelete }: { appId: string; status: string; onDelete: () => void }) {
+  const [open, setOpen] = useState(false)
+  const [pos, setPos] = useState({ top: 0, right: 0 })
+  const btnRef = useRef<HTMLButtonElement>(null)
+  const updateApp = useUpdateApp()
+
+  const handleOpen = (e: React.MouseEvent) => {
+    e.preventDefault()
+    if (btnRef.current) {
+      const rect = btnRef.current.getBoundingClientRect()
+      setPos({
+        top: rect.bottom + window.scrollY + 4,
+        right: window.innerWidth - rect.right,
+      })
+    }
+    setOpen(!open)
+  }
+
+  return (
+    <div className="relative">
+      <button
+        ref={btnRef}
+        onClick={handleOpen}
+        className="p-1 rounded hover:bg-zinc-100 text-zinc-400 hover:text-zinc-600 transition-colors"
+      >
+        <MoreHorizontal className="w-4 h-4" />
+      </button>
+      {open && (
+        <>
+          <div className="fixed inset-0 z-40" onClick={() => setOpen(false)} />
+          {/* fixed แทน absolute — ไม่ตกขอบแน่นอน */}
+          <div
+            className="fixed w-36 bg-white border border-zinc-200 rounded-lg shadow-sm z-50 py-1"
+            style={{ top: pos.top, right: pos.right }}
+          >
+            {status === "STOPPED" || status === "IDLE" ? (
+              <button
+                onClick={() => { updateApp.mutate({ id: appId, data: { status: "RUNNING" } }); setOpen(false) }}
+                className="w-full text-left px-3 py-1.5 text-xs text-zinc-700 hover:bg-zinc-50 flex items-center gap-2"
+              >
+                <Play className="w-3.5 h-3.5" /> Start
+              </button>
+            ) : (
+              <button
+                onClick={() => { updateApp.mutate({ id: appId, data: { status: "STOPPED" } }); setOpen(false) }}
+                className="w-full text-left px-3 py-1.5 text-xs text-zinc-700 hover:bg-zinc-50 flex items-center gap-2"
+              >
+                <Square className="w-3.5 h-3.5" /> Stop
+              </button>
+            )}
+            <Link
+              to={`/services/${appId}`}
+              onClick={() => setOpen(false)}
+              className="flex items-center gap-2 px-3 py-1.5 text-xs text-zinc-700 hover:bg-zinc-50"
+            >
+              <Settings className="w-3.5 h-3.5" /> Settings
+            </Link>
+            <div className="my-1 border-t border-zinc-100" />
+            <button
+              onClick={() => { onDelete(); setOpen(false) }}
+              className="w-full text-left px-3 py-1.5 text-xs text-red-600 hover:bg-red-50 flex items-center gap-2"
+            >
+              <Trash2 className="w-3.5 h-3.5" /> Delete
+            </button>
+          </div>
+        </>
+      )}
+    </div>
+  )
+}
+
+// ─── Services list ────────────────────────────────────────────────────────────
+
+export function ServicesList() {
+  const { user } = useAuth()
+  const [search, setSearch] = useState("")
+  const [statusFilter, setStatusFilter] = useState("all")
+  const [page, setPage] = useState(1)
+  const deleteApp = useDeleteApp()
+
+  const { data, isLoading, isFetching } = useGetApps({
+    userId: user?.userId || "",
+    search: search || undefined,
+    status: statusFilter === "all" ? undefined : statusFilter.toUpperCase(),
+    page,
+    limit: 15,
+  })
+
+  const apps: any[] = Array.isArray(data)
+    ? data
+    : Array.isArray(data?.data)
+    ? data.data
+    : Array.isArray(data?.apps) 
+    ? data.apps
+    : []
+
+  const STATUSES = ["all", "running", "building", "stopped", "error","idle"]
+
+  return (
+    <div className="px-6 py-8">
+      {/* Header */}
+      <div className="flex items-center justify-between mb-6">
+      <div className="flex items-center gap-2">
+          <h1 className="text-base font-semibold text-zinc-900">Services</h1>
+          {isFetching && <RefreshCw className="w-3.5 h-3.5 animate-spin text-zinc-400" />}
+        </div>
+        
+        <Link
+          to="/services/new"
+          className="flex items-center gap-1.5 px-3 py-1.5 bg-zinc-900 text-white text-xs font-medium rounded hover:bg-zinc-700 transition-colors"
+        >
+          <Plus className="w-3.5 h-3.5" /> New service
+        </Link>
+      </div>
+
+      {/* Filters */}
+      <div className="flex items-center gap-3 mb-5 flex-wrap">
+        <div className="relative w-56">
+          <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-zinc-400" />
+          <input
+            type="text"
+            placeholder="Search..."
+            value={search}
+            onChange={(e) => { setSearch(e.target.value); setPage(1) }}
+            className="w-full pl-8 pr-3 py-1.5 text-sm border border-zinc-200 rounded focus:outline-none focus:border-zinc-400 bg-white"
+          />
+        </div>
+        <div className="flex items-center gap-1">
+          {STATUSES.map((s) => (
+            <button
+              key={s}
+              onClick={() => { setStatusFilter(s); setPage(1) }}
+              className={`px-3 py-1.5 text-xs rounded capitalize transition-colors ${
+                statusFilter === s
+                  ? "bg-zinc-900 text-white"
+                  : "text-zinc-500 hover:text-zinc-700 hover:bg-zinc-100"
+              }`}
+            >
+              {s}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Table */}
+      {isLoading ? (
+        <div className="border border-zinc-200 rounded-lg px-4 py-12 text-center text-sm text-zinc-400">
+          Loading...
+        </div>
+      ) : apps.length === 0 ? (
+        <div className="border border-dashed border-zinc-200 rounded-lg py-16 text-center">
+          <p className="text-sm text-zinc-500 mb-3">
+            {search || statusFilter !== "all" ? "No services match your filter." : "No services yet."}
+          </p>
+          {!search && statusFilter === "all" && (
+            <Link
+              to="/services/new"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 border border-zinc-200 text-xs text-zinc-600 rounded hover:bg-zinc-50 transition-colors"
+            >
+              <Plus className="w-3.5 h-3.5" /> Create your first service
+            </Link>
+          )}
+        </div>
+      ) : (
+        <div className="border border-zinc-200 rounded-lg overflow-hidden">
+          {/* Header row */}
+          <div className="grid grid-cols-12 gap-4 px-4 py-2 bg-zinc-50 border-b border-zinc-200 text-xs font-medium text-zinc-500">
+            <div className="col-span-3">Name</div>
+            <div className="col-span-2">Status</div>
+            <div className="col-span-4">Repository</div>
+            <div className="col-span-2">Updated</div>
+            <div className="col-span-1" />
+          </div>
+
+          {apps.map((app, i) => (
+            <div
+              key={app.id}
+              className={`grid grid-cols-12 gap-4 px-4 py-3 items-center ${
+                i < apps.length - 1 ? "border-b border-zinc-100" : ""
+              }`}
+            >
+              <div className="col-span-3 min-w-0">
+                <Link
+                  to={`/services/${app.id}`}
+                  className="text-sm font-medium font-mono text-zinc-900 hover:underline truncate block"
+                >
+                  {app.name}
+                </Link>
+                {app.port && <span className="text-xs text-zinc-400 font-mono">:{app.port}</span>}
+              </div>
+              <div className="col-span-2">
+                <StatusBadge status={app.status} />
+              </div>
+              <div className="col-span-4 min-w-0 flex items-center gap-1.5">
+                <GitBranch className="w-3 h-3 text-zinc-400 flex-shrink-0" />
+                <span className="text-xs text-zinc-400 font-mono truncate">
+                  {app.repoUrl?.replace("https://github.com/", "") || "—"}
+                </span>
+              </div>
+              <div className="col-span-2 text-xs text-zinc-400">
+                {app.updatedAt ? new Date(app.updatedAt).toLocaleDateString() : "—"}
+              </div>
+              <div className="col-span-1 flex justify-end">
+                <AppMenu
+                  appId={app.id}
+                  status={app.status?.toUpperCase()}
+                  onDelete={() => deleteApp.mutate(app.id)}
+                />
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
+// ─── New service ──────────────────────────────────────────────────────────────
+
+export function NewService() {
+  const navigate = useNavigate()
+  const createApp = useCreateApp()
+  const [form, setForm] = useState({ name: "", repoUrl: "", rootDir: "." })
+  const [errors, setErrors] = useState<Record<string, string>>({})
+
+  const validate = () => {
+    const e: Record<string, string> = {}
+    if (!form.name) e.name = "Service name is required"
+    else if (!/^[a-z0-9-]+$/.test(form.name)) e.name = "Lowercase letters, numbers, and hyphens only"
+    if (!form.repoUrl) e.repoUrl = "Repository URL is required"
+    else if (!form.repoUrl.includes("github.com")) e.repoUrl = "Must be a GitHub URL"
+    return e
+  }
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault()
+    const errs = validate()
+    if (Object.keys(errs).length > 0) { setErrors(errs); return }
+    setErrors({})
+    createApp.mutate(
+      { name: form.name, repoUrl: form.repoUrl },
+      { onSuccess: () => navigate("/services") }
+    )
+  }
+
+  return (
+    <div className="px-6 py-8">
+      <div className="flex items-center gap-3 mb-8">
+        <Link to="/services" className="p-1 rounded hover:bg-zinc-100 text-zinc-400 hover:text-zinc-600 transition-colors">
+          <ArrowLeft className="w-4 h-4" />
+        </Link>
+        <h1 className="text-base font-semibold text-zinc-900">New service</h1>
+      </div>
+
+      <form onSubmit={handleSubmit} className="max-w-lg space-y-5">
+        {/* Name */}
+        <div>
+          <label className="block text-xs font-medium text-zinc-700 mb-1.5">Service name</label>
+          <input
+            type="text"
+            placeholder="my-api"
+            value={form.name}
+            onChange={(e) => setForm({ ...form, name: e.target.value })}
+            className={`w-full px-3 py-2 text-sm border rounded focus:outline-none focus:border-zinc-400 font-mono transition-colors ${
+              errors.name ? "border-red-300 bg-red-50" : "border-zinc-200"
+            }`}
+          />
+          {errors.name && <p className="mt-1 text-xs text-red-500">{errors.name}</p>}
+          <p className="mt-1 text-xs text-zinc-400">Lowercase letters, numbers, and hyphens only.</p>
+        </div>
+
+        {/* Repo */}
+        <div>
+          <label className="block text-xs font-medium text-zinc-700 mb-1.5">GitHub repository</label>
+          <div className="relative">
+            <GitBranch className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-zinc-400" />
+            <input
+              type="text"
+              placeholder="https://github.com/username/repo.git"
+              value={form.repoUrl}
+              onChange={(e) => setForm({ ...form, repoUrl: e.target.value })}
+              className={`w-full pl-8 pr-3 py-2 text-sm border rounded focus:outline-none focus:border-zinc-400 font-mono transition-colors ${
+                errors.repoUrl ? "border-red-300 bg-red-50" : "border-zinc-200"
+              }`}
+            />
+          </div>
+          {errors.repoUrl && <p className="mt-1 text-xs text-red-500">{errors.repoUrl}</p>}
+        </div>
+
+        {/* Root dir */}
+        <div>
+          <label className="block text-xs font-medium text-zinc-700 mb-1.5">Root directory</label>
+          <input
+            type="text"
+            placeholder="."
+            value={form.rootDir}
+            onChange={(e) => setForm({ ...form, rootDir: e.target.value })}
+            className="w-full px-3 py-2 text-sm border border-zinc-200 rounded focus:outline-none focus:border-zinc-400 font-mono"
+          />
+          <p className="mt-1 text-xs text-zinc-400">
+            Set to <code className="font-mono bg-zinc-100 px-1 rounded">server</code> for monorepos with a backend subfolder.
+          </p>
+        </div>
+
+        <div className="border border-zinc-200 rounded-lg p-4 bg-zinc-50 text-xs text-zinc-500 leading-relaxed">
+          The platform auto-detects your runtime and generates a Dockerfile. Push to{" "}
+          <code className="font-mono bg-white border border-zinc-200 px-1 rounded">main</code> to trigger deploys.
+        </div>
+
+        <div className="flex items-center gap-3 pt-1">
+          <button
+            type="submit"
+            disabled={createApp.isPending}
+            className="px-4 py-2 bg-zinc-900 text-white text-sm font-medium rounded hover:bg-zinc-700 transition-colors disabled:opacity-60 flex items-center gap-2"
+          >
+            {createApp.isPending && (
+              <svg className="animate-spin w-3.5 h-3.5" fill="none" viewBox="0 0 24 24">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
+              </svg>
+            )}
+            {createApp.isPending ? "Creating..." : "Create service"}
+          </button>
+          <Link to="/services" className="text-sm text-zinc-500 hover:text-zinc-700 transition-colors">
+            Cancel
+          </Link>
+        </div>
+      </form>
+    </div>
+  )
+}
+
+// ─── Service detail ───────────────────────────────────────────────────────────
+
+type Tab = "deployments" | "logs" | "variables" | "settings"
+const TABS: Tab[] = ["deployments", "logs", "variables", "settings"]
+
+const MOCK_LOGS = [
+  { time: "10:31:00", level: "info",    msg: "Cloning repository..." },
+  { time: "10:31:04", level: "info",    msg: "Detected runtime: Node.js 20" },
+  { time: "10:31:05", level: "info",    msg: "Generating Dockerfile..." },
+  { time: "10:31:58", level: "info",    msg: "npm install — 247 packages" },
+  { time: "10:32:01", level: "info",    msg: "tsc — compiled in 3.2s" },
+  { time: "10:32:04", level: "success", msg: "Container started on :3001" },
+  { time: "10:32:06", level: "success", msg: "Health check passed — service is live" },
+]
+
+const DEPLOY_DOT: Record<string, string> = {
+  SUCCESS:  "bg-emerald-500",
+  BUILDING: "bg-yellow-400 animate-pulse",
+  FAILED:   "bg-red-500",
+}
+
+const DEPLOY_TEXT: Record<string, string> = {
+  SUCCESS:  "text-emerald-600",
+  BUILDING: "text-yellow-600",
+  FAILED:   "text-red-500",
+}
+
+const LOG_COLOR: Record<string, string> = {
+  info:    "text-zinc-400",
+  success: "text-emerald-400",
+  warning: "text-yellow-400",
+  error:   "text-red-400",
+}
+
+function DeploymentsTab({ appId }: { appId: string }) {
+  const [page, setPage] = useState(1)
+  const { data, isLoading } = useGetDeploys(appId, { page, limit: 10, sortOrder: 'desc' })
+
+  const deploys = Array.isArray(data?.data?.data) ? data.data.data : []
+  const totalPages = data?.data?.totalPages ?? 1
+
+  const DEPLOY_DOT: Record<string, string> = {
+    SUCCESS:  "bg-emerald-500",
+    BUILDING: "bg-yellow-400 animate-pulse",
+    FAILED:   "bg-red-500",
+    PENDING:  "bg-zinc-300",
+  }
+
+  const DEPLOY_TEXT: Record<string, string> = {
+    SUCCESS:  "text-emerald-600",
+    BUILDING: "text-yellow-600",
+    FAILED:   "text-red-500",
+    PENDING:  "text-zinc-400",
+  }
+
+  if (isLoading) return (
+    <div className="text-sm text-zinc-400 py-8 text-center">Loading...</div>
+  )
+
+  if (deploys.length === 0) return (
+    <div className="border border-zinc-200 rounded-lg py-8 text-center text-sm text-zinc-400">
+      No deploys yet
+    </div>
+  )
+
+  return (
+    <div className="space-y-4">
+      <div className="border border-zinc-200 rounded-lg overflow-hidden">
+        {deploys.map((d: any, i: number) => (
+          <div
+            key={d.id}
+            className={`flex items-center gap-4 px-4 py-3 ${i < deploys.length - 1 ? "border-b border-zinc-100" : ""}`}
+          >
+            <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${DEPLOY_DOT[d.status] ?? "bg-zinc-300"}`} />
+            <span className="text-sm font-mono text-zinc-700 flex-shrink-0">
+              {d.id.substring(0, 8)}
+            </span>
+            <span className={`text-xs font-mono flex-1 ${DEPLOY_TEXT[d.status] ?? "text-zinc-400"}`}>
+              {d.status.toLowerCase()}
+            </span>
+            <span className="text-xs text-zinc-400">
+              {new Date(d.createdAt).toLocaleString()}
+            </span>
+          </div>
+        ))}
+      </div>
+      <div className="flex justify-center">
+        <Pagination page={page} totalPages={totalPages} onPageChange={setPage} />
+      </div>
+    </div>
+  )
+}
+
+function LogsTab() {
+  return (
+    <div className="bg-zinc-950 rounded-lg overflow-hidden">
+      <div className="flex items-center gap-2 px-4 py-3 border-b border-zinc-800">
+        <Terminal className="w-3.5 h-3.5 text-zinc-500" />
+        <span className="text-xs text-zinc-500 font-mono">build log</span>
+        <div className="ml-auto flex items-center gap-1.5">
+          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+          <span className="text-xs text-zinc-500 font-mono">live</span>
+        </div>
+      </div>
+      <div className="p-5 space-y-1.5 font-mono text-xs">
+        {MOCK_LOGS.map((log, i) => (
+          <div key={i} className="flex items-start gap-4">
+            <span className="text-zinc-600 flex-shrink-0 tabular-nums">{log.time}</span>
+            <span className={LOG_COLOR[log.level] ?? "text-zinc-400"}>{log.msg}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+function VariablesTab() {
+  const [rows, setRows] = useState([
+    { key: "NODE_ENV", value: "production" },
+    { key: "PORT", value: "3000" },
+    { key: "", value: "" },
+  ])
+
+  const update = (i: number, field: "key" | "value", val: string) => {
+    const next = [...rows]
+    next[i][field] = val
+    if (i === rows.length - 1 && val) next.push({ key: "", value: "" })
+    setRows(next)
+  }
+
+  return (
+    <div className="space-y-4">
+      <p className="text-xs text-zinc-500">Variables are injected at runtime. Changes take effect on the next deploy.</p>
+      <div className="border border-zinc-200 rounded-lg overflow-hidden">
+        <div className="grid grid-cols-2 border-b border-zinc-200 bg-zinc-50">
+          <div className="px-3 py-2 text-xs font-medium text-zinc-500 border-r border-zinc-200">KEY</div>
+          <div className="px-3 py-2 text-xs font-medium text-zinc-500">VALUE</div>
+        </div>
+        {rows.map((row, i) => (
+          <div key={i} className={`grid grid-cols-2 ${i < rows.length - 1 ? "border-b border-zinc-100" : ""}`}>
+            <input
+              className="px-3 py-2 text-xs font-mono border-r border-zinc-100 focus:outline-none focus:bg-zinc-50 bg-white"
+              placeholder="VARIABLE_NAME"
+              value={row.key}
+              onChange={(e) => update(i, "key", e.target.value)}
+            />
+            <div className="flex">
+              <input
+                className="flex-1 px-3 py-2 text-xs font-mono focus:outline-none focus:bg-zinc-50 bg-white"
+                placeholder="value"
+                value={row.value}
+                onChange={(e) => update(i, "value", e.target.value)}
+              />
+              {rows.length > 1 && (
+                <button onClick={() => setRows(rows.filter((_, idx) => idx !== i))} className="px-2 text-zinc-300 hover:text-red-400 transition-colors">×</button>
+              )}
+            </div>
+          </div>
+        ))}
+      </div>
+      <div className="flex justify-end">
+        <button className="px-3 py-1.5 bg-zinc-900 text-white text-xs rounded hover:bg-zinc-700 transition-colors">
+          Save changes
+        </button>
+      </div>
+    </div>
+  )
+}
+
+function SettingsTab({ app }: { app: any }) {
+  const navigate = useNavigate()
+  const updateApp = useUpdateApp()
+  const deleteApp = useDeleteApp()
+  const [name, setName] = useState(app.name)
+  const [rootDir, setRootDir] = useState(app.rootDir || ".")
+
+  return (
+    <div className="space-y-8 max-w-md">
+      <div>
+        <h3 className="text-xs font-semibold text-zinc-400 uppercase tracking-wider mb-4">General</h3>
+        <div className="space-y-4">
+          <div>
+            <label className="block text-xs font-medium text-zinc-700 mb-1.5">Service name</label>
+            <input
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              className="w-full px-3 py-2 text-sm border border-zinc-200 rounded focus:outline-none focus:border-zinc-400 font-mono"
+            />
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-zinc-700 mb-1.5">Root directory</label>
+            <input
+              value={rootDir}
+              onChange={(e) => setRootDir(e.target.value)}
+              className="w-full px-3 py-2 text-sm border border-zinc-200 rounded focus:outline-none focus:border-zinc-400 font-mono"
+            />
+          </div>
+          <button
+            onClick={() => updateApp.mutate({ id: app.id, data: { name, rootDir } })}
+            disabled={updateApp.isPending}
+            className="px-3 py-1.5 bg-zinc-900 text-white text-xs rounded hover:bg-zinc-700 transition-colors disabled:opacity-60"
+          >
+            {updateApp.isPending ? "Saving..." : "Save"}
+          </button>
+        </div>
+      </div>
+
+      <div>
+        <h3 className="text-xs font-semibold text-red-400 uppercase tracking-wider mb-4">Danger zone</h3>
+        <div className="border border-red-200 rounded-lg p-4 flex items-start justify-between gap-4">
+          <div>
+            <div className="text-sm font-medium text-zinc-900">Delete service</div>
+            <div className="text-xs text-zinc-500 mt-0.5">Stops the container and removes all data. Cannot be undone.</div>
+          </div>
+          <button
+            onClick={() => deleteApp.mutate(app.id, { onSuccess: () => navigate("/services") })}
+            disabled={deleteApp.isPending}
+            className="flex-shrink-0 px-3 py-1.5 border border-red-300 text-red-600 text-xs rounded hover:bg-red-50 transition-colors disabled:opacity-60"
+          >
+            {deleteApp.isPending ? "Deleting..." : "Delete"}
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+export function ServiceDetail() {
+  const { id } = useParams<{ id: string }>()
+  const [tab, setTab] = useState<Tab>("deployments")
+  const [deployId, setDeployId] = useState<string | null>(null)
+  const [waitingForBuild, setWaitingForBuild] = useState(false)
+  const redeploy = useRedeploy()
+  const { data: app, isLoading } = useGetAppById(id || "", {
+    refetchInterval: deployId ? 2000 : false,
+  })
+
+  const isDeploying = !!deployId
+
+  const handleRedeploy = () => {
+    if (!app?.id) return
+    redeploy.mutate(app.id, {
+      onSuccess: (data) => {
+        console.log("[Redeploy] triggered, deployId:", data?.deployId)
+        setDeployId(data?.deployId || "pending")
+      },
+      onError: () => {
+        console.log("[Redeploy] failed")
+      }
+    })
+  }
+
+  useEffect(() => {
+    if (deployId) {
+      console.log("[Poll] status:", app?.status, "deployId:", deployId)
+    }
+  
+    if (deployId && app?.status === "BUILDING") {
+      setWaitingForBuild(true)
+    }
+  
+    if (deployId && waitingForBuild && app?.status !== "BUILDING") {
+      console.log("[Poll] done, status:", app?.status)
+      setDeployId(null)
+      setWaitingForBuild(false)
+      if (app?.status === "RUNNING") toast.success("Deploy complete!")
+      if (app?.status === "ERROR") toast.error("Deploy failed!")
+    }
+  }, [app?.status, deployId, waitingForBuild])
+
+  if (isLoading) {
+    return (
+      <div className="px-6 py-16 text-center text-sm text-zinc-400">Loading...</div>
+    )
+  }
+
+  if (!app) {
+    return (
+      <div className="px-6 py-16 text-center">
+        <p className="text-sm text-zinc-500 mb-3">Service not found</p>
+        <Link to="/services" className="text-xs text-zinc-400 hover:underline">← Back to services</Link>
+      </div>
+    )
+  }
+
+  const status = app.status?.toUpperCase() || "IDLE"
+
+  return (
+    <div>
+      {/* Service header */}
+      <div className="border-b border-zinc-200 px-6 py-4">
+        <div className="flex items-center gap-3 mb-1">
+          <Link to="/services" className="p-1 rounded hover:bg-zinc-100 text-zinc-400 hover:text-zinc-600 transition-colors">
+            <ArrowLeft className="w-4 h-4" />
+          </Link>
+          <span className={`w-2 h-2 rounded-full ${STATUS_DOT[status] ?? "bg-zinc-300"}`} />
+          <span className="text-sm font-semibold font-mono text-zinc-900">{app.name}</span>
+          <span className={`text-xs font-mono ${STATUS_TEXT[status] ?? "text-zinc-400"}`}>
+            {isDeploying ? "building" : status.toLowerCase()}
+          </span>
+          {app.port && !isDeploying && (
+            <span className="text-xs text-zinc-400 font-mono">:{app.port}</span>
+          )}
+          <div className="ml-auto flex items-center gap-2">
+            <button
+              onClick={handleRedeploy}
+              disabled={isDeploying || redeploy.isPending}
+              className="flex items-center gap-1.5 px-3 py-1.5 border border-zinc-200 text-xs text-zinc-600 rounded hover:bg-zinc-50 transition-colors disabled:opacity-60"
+            >
+              <RefreshCw className={`w-3.5 h-3.5 ${isDeploying ? "animate-spin" : ""}`} />
+              {isDeploying ? "Deploying..." : redeploy.isPending ? "Triggering..." : "Redeploy"}
+            </button>
+            {app.domain && (
+              <a
+                href={`https://${app.domain}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="p-1.5 rounded hover:bg-zinc-100 text-zinc-400 hover:text-zinc-600 transition-colors"
+              >
+                <ExternalLink className="w-4 h-4" />
+              </a>
+            )}
+          </div>
+        </div>
+        {app.repoUrl && (
+          <div className="flex items-center gap-1.5 ml-9">
+            <GitBranch className="w-3 h-3 text-zinc-400" />
+            <span className="text-xs text-zinc-400 font-mono">
+              {app.repoUrl.replace("https://github.com/", "")}
+            </span>
+            {app.rootDir && app.rootDir !== "." && (
+              <>
+                <span className="text-zinc-300 mx-1">·</span>
+                <span className="text-xs text-zinc-400 font-mono">root: {app.rootDir}</span>
+              </>
+            )}
+          </div>
+        )}
+      </div>
+
+      {/* Tabs */}
+      <div className="border-b border-zinc-200 px-6">
+        <div className="flex items-center">
+          {TABS.map((t) => (
+            <button
+              key={t}
+              onClick={() => setTab(t)}
+              className={`px-4 py-3 text-xs font-medium capitalize border-b-2 transition-colors ${
+                tab === t ? "border-zinc-900 text-zinc-900" : "border-transparent text-zinc-500 hover:text-zinc-700"
+              }`}
+            >
+              {t}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Content */}
+      <div className="px-6 py-6">
+        {tab === "deployments" && <DeploymentsTab appId={app.id} />}
+        {tab === "logs"        && <LogsTab />}
+        {tab === "variables"   && <VariablesTab />}
+        {tab === "settings"    && <SettingsTab app={app} />}
+      </div>
+    </div>
+  )
+}

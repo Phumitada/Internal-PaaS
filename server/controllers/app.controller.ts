@@ -6,28 +6,20 @@ import { createAppSchema, updateAppSchema } from '../validator/app.validator'
 export const appController = {
   createApp: async (req: Request, res: Response) => {
     try {
-      const userId = (req as AuthRequest).user?.userId
+      const userId = (req as AuthRequest).user?.userId  
       if (!userId) {
         res.status(401).json({ success: false, message: 'Unauthorized' })
         return
       }
-      const parsed = createAppSchema.safeParse(req.body)
-      if(!parsed.success){
-        res.status(400).json({
-            success: false,
-            message: parsed.error.issues[0].message
-        })
-        return
-      }
 
       const { apps } = await appService.createApp({
-        userId,
-        ...parsed.data
+        userId,             
+        name: req.body.name,
+        repoUrl: req.body.repoUrl,
       })
 
       res.status(201).json({ success: true, data: { apps } })
     } catch (error: any) {
-      console.log(error)
       res.status(400).json({ success: false, message: error.message })
     }
   },
@@ -37,15 +29,15 @@ export const appController = {
         const userId = (req as AuthRequest).user?.userId
         if(!userId){
             res.status(401).json({
-                success:false,
-                message:'Unauthorized'
+                success: false,
+                message: 'Unauthorized'
             })
             return
         }
 
         const result = await appService.getApps({
-            userId,
-            ...req.query
+            ...req.query,
+            userId: userId 
         })
 
         res.status(200).json({success:true, data:result})
@@ -58,7 +50,7 @@ export const appController = {
   getAllApps: async (req:Request,res:Response) => {
     try {
         const result = await appService.getAllApps(req.query)
-        res.status(200).json({succes:true,data:result})
+        res.status(200).json({ success: true, data: result })
     } catch (error) {
         res.status(400).json({success:false,message:error.message})
     }

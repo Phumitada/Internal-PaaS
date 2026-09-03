@@ -23,7 +23,9 @@ export const authenticate = (req: AuthRequest, res: Response, next: NextFunction
     req.user = payload
     next()
   } catch (error) {
-    next()
+    res.status(401).json({ success:false,message: "Token unavailable"})
+    console.log(error)
+    return
   }
 }
 

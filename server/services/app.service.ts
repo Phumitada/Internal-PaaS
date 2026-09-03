@@ -29,8 +29,8 @@ export const appService = {
             userId,
         }
         
-        if(status){
-            whereClause.status = {contains:status,mode:"insensitive"}
+        if (status) {
+            whereClause.status = status; 
         }
 
         if(search){
@@ -116,7 +116,6 @@ export const appService = {
         const app = await prisma.app.findUnique({
             where: {id}
         })
-
         if(!app) throw new Error("App not found")
         if(app.userId !== userId && role !== 'ADMIN') throw new Error('Forbidden')
 

@@ -1,19 +1,20 @@
-import { useAuthStore } from '@/stores/auth.store'
-import { Navigate, Outlet } from 'react-router-dom'
+import { Navigate, Outlet } from "react-router-dom"
+import { useAuth } from "@/hooks/useAuth"
 
+export default function ProtectedRoute() {
 
-const ProtectedRoute = () => {
-  const { isAuthenticated, isLoading } = useAuthStore()
-
+  const { user, isLoading } = useAuth() 
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600" />
+      <div className="min-h-screen w-full flex flex-col items-center justify-center bg-gray-50">
+        <div className="h-8 w-8 animate-spin rounded-full border-4 border-blue-600 border-t-transparent" />
+        <p className="mt-4 text-sm font-medium text-gray-600">Verifying session...</p>
       </div>
     )
   }
 
-  return isAuthenticated ? <Outlet /> : <Navigate to="/login" replace />
+  if (!user) {
+    return <Navigate to="/login" replace />
+  }
+  return <Outlet />
 }
-
-export default ProtectedRoute

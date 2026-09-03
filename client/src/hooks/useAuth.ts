@@ -10,11 +10,13 @@ export const useAuth = () => {
   const navigate = useNavigate()
   const location = useLocation()
   const queryClient = useQueryClient()
-  const { setAuth, clearAuth, isAuthenticated, user, isLoading } = useAuthStore()
+  
+  // ลบ isLoading ออกจาก store ดึงมาเฉพาะตัวแปรคุมสถานะระบบหลัก
+  const { setAuth, clearAuth, isAuthenticated, user } = useAuthStore()
   const { handleError } = useErrorHandler()
 
-  // Don't call getMe if we're on login/register pages
-  const isAuthPage = location.pathname === '/login' || location.pathname === '/register'
+  // ตรวจสอบหน้าเพจสาธารณะ
+  const isAuthPage = location.pathname === '/login' || location.pathname === '/register' || location.pathname === '/landing'
 
   const { isLoading: isFetchingUser } = useQuery({
     queryKey: ["auth", "me"],
@@ -22,11 +24,14 @@ export const useAuth = () => {
       try {
         const data = await authService.getMe()
         if (data) {
-          setAuth(data.user, data.accessToken)
+          setAuth({
+            userId: data.user.id,    // map id → userId
+            email:  data.user.email,
+            role:   data.user.role,
+          }, data.accessToken)
         }
         return data
       } catch (error: any) {
-        // Silent handling of 401 errors
         if (error?.response?.status === 401) {
           clearAuth()
           return null
@@ -34,6 +39,7 @@ export const useAuth = () => {
         throw error
       }
     },
+    // รันเฉพาะตอนที่ยังไม่มีการยืนยันตัวตน และไม่อยู่ในกลุ่มหน้า Auth
     enabled: !isAuthenticated && !isAuthPage,
     retry: false,
     staleTime: Infinity,
@@ -42,9 +48,13 @@ export const useAuth = () => {
   const loginMutation = useMutation({
     mutationFn: authService.login,
     onSuccess: (data) => {
-      setAuth(data.user, data.accessToken);
-      toast.success(`Welcome back, ${data.user.email}!`);
-      navigate("/protected");
+      setAuth({
+        userId: data.user.id,      
+        email:  data.user.email,
+        role:   data.user.role,
+      }, data.accessToken)
+      toast.success(`Welcome back, ${data.user.email}!`)
+      navigate("/dashboard")
     },
     onError: (error: any) => {
       handleError(error, 'Login failed')
@@ -54,14 +64,15 @@ export const useAuth = () => {
   const registerMutation = useMutation({
     mutationFn: authService.register,
     onSuccess: (data) => {
-      setAuth(data.user, data.accessToken)
+      setAuth({
+        userId: data.user.id,      
+        email:  data.user.email,
+        role:   data.user.role,
+      }, data.accessToken)
       toast.success('Account created!')
-      navigate('/protected')
+      navigate('/dashboard')
     },
-    onError: (error: any) => {
-      handleError(error, 'Register failed')
-    },
-  })
+    })
 
   const logoutMutation = useMutation({
     mutationFn: authService.logout,
@@ -76,7 +87,7 @@ export const useAuth = () => {
   return {
     user,
     isAuthenticated,
-    isLoading: isLoading || isFetchingUser,
+    isLoading: isFetchingUser,
 
     login: loginMutation.mutate,
     register: registerMutation.mutate,

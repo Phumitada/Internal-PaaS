@@ -1,17 +1,11 @@
-import { type ReactNode } from 'react'
-import Navbar from '@/components/Navbar'
+import { Outlet } from 'react-router-dom'
 import { Toaster } from 'sonner'
 
-interface MainLayoutProps {
-  children: ReactNode
-}
-
-const MainLayout = ({ children }: MainLayoutProps) => {
+const MainLayout = () => {
   return (
     <div className="min-h-screen bg-gray-50">
-      <Navbar />
       <main className="flex-1">
-        {children}
+        <Outlet />
       </main>
       <Toaster position="top-right" richColors />
     </div>

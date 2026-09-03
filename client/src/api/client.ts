@@ -2,12 +2,14 @@ import { useAuthStore } from "@/stores/auth.store";
 import axios from "axios";
 import type { AxiosError, InternalAxiosRequestConfig } from "axios";
 
-const BASE_URL = import.meta.env.VITE_API_URL || "/api";
+const BASE_URL = import.meta.env.VITE_API_URL || "http://127.0.0.1:5001/api";
+
 export const axiosPublic = axios.create({
   baseURL: BASE_URL,
   withCredentials: true,
   headers: { "Content-Type": "application/json" },
 });
+
 export const api = axios.create({
   baseURL: BASE_URL,
   withCredentials: true,
@@ -61,7 +63,12 @@ api.interceptors.response.use(
 
       try {
         const response = await axiosPublic.post("/auth/refresh", {});
-        const { accessToken } = response.data.data;
+        const accessToken = response.data?.data?.accessToken || response.data?.accessToken;
+        
+        if (!accessToken) {
+          throw new Error("No token returned from refresh endpoint");
+        }
+
         useAuthStore.getState().setAccessToken(accessToken);
         processQueue(null, accessToken);
         originalRequest.headers.Authorization = `Bearer ${accessToken}`;
@@ -69,16 +76,17 @@ api.interceptors.response.use(
       } catch (refreshError) {
         processQueue(refreshError, null);
         useAuthStore.getState().clearAuth();
-        window.location.href = "/login";
-        return Promise.reject(new Error("Session expired"));
+        return Promise.reject(refreshError);
       } finally {
         isRefreshing = false;
       }
     }
+
     if (error.response?.status !== 401) {
       console.error("API Error:", error);
       return Promise.reject(error);
     }
+
     return Promise.reject(new Error("Session expired"));
   }
 );

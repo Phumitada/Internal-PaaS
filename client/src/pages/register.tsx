@@ -1,177 +1,148 @@
-import { Link } from 'react-router-dom'
-import { useForm } from 'react-hook-form'
-import { zodResolver } from '@hookform/resolvers/zod'
-import { z } from 'zod'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form'
-import { useAuth } from '@/hooks/useAuth'
-import { Lock, Mail, User, Shield } from 'lucide-react'
+import { useState } from "react"
+import { Link } from "react-router-dom"
+import { Github, Eye, EyeOff } from "lucide-react"
+import { useAuth } from "@/hooks/useAuth"
 
-const registerSchema = z.object({
-  name: z.string().min(2, 'Name must be at least 2 characters'),
-  email: z.string().email('Please enter a valid email address'),
-  password: z.string().min(6, 'Password must be at least 6 characters'),
-})
-
-type RegisterFormData = z.infer<typeof registerSchema>
-
-export default function RegisterPage() {
+export default function Register() {
   const { register, isRegisterLoading } = useAuth()
-  
-  const form = useForm<RegisterFormData>({
-    resolver: zodResolver(registerSchema),
-    defaultValues: {
-      name: '',
-      email: '',
-      password: '',
-    },
-  })
+  const [form, setForm] = useState({ name: "", email: "", password: "" })
+  const [showPassword, setShowPassword] = useState(false)
+  const [errors, setErrors] = useState<Record<string, string>>({})
 
-  const onSubmit = (data: RegisterFormData) => {
-    register(data)
+  const validate = () => {
+    const e: Record<string, string> = {}
+    if (!form.name || form.name.length < 2) e.name = "At least 2 characters"
+    if (!form.email) e.email = "Email is required"
+    else if (!/\S+@\S+\.\S+/.test(form.email)) e.email = "Enter a valid email"
+    if (!form.password || form.password.length < 6) e.password = "At least 6 characters"
+    return e
+  }
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault()
+    const errs = validate()
+    if (Object.keys(errs).length > 0) { setErrors(errs); return }
+    setErrors({})
+    register(form)
+  }
+
+  // Demo-only
+  const handleGithub = () => {
+    register({ name: "GitHub User", email: "demo@github.com", password: "github-oauth" })
   }
 
   return (
-    <div className="min-h-screen lg:grid lg:grid-cols-2">
-      <div className="hidden lg:flex flex-col justify-center items-center bg-gradient-to-br from-primary to-primary-hover text-white p-12 relative overflow-hidden">
-        <div className="absolute top-10 left-10 w-20 h-20 bg-white/10 rounded-full blur-xl"></div>
-        <div className="absolute bottom-10 right-10 w-32 h-32 bg-white/10 rounded-full blur-2xl"></div>
-        <div className="absolute top-1/2 left-1/4 w-16 h-16 bg-white/5 rounded-full blur-lg"></div>
-        
-        <div className="relative z-10 text-center space-y-6 max-w-md">
-          <div className="flex justify-center mb-8">
-            <div className="flex items-center space-x-3">
-              <Shield className="w-12 h-12" />
-              <h1 className="text-4xl font-heading font-bold">SecureApp</h1>
-            </div>
+    <div className="min-h-screen bg-zinc-50 flex items-center justify-center px-4">
+      <div className="w-full max-w-sm">
+        {/* Logo */}
+        <div className="flex items-center justify-center gap-2 mb-8">
+          <div className="w-7 h-7 bg-zinc-900 rounded flex items-center justify-center">
+            <span className="text-white text-sm font-bold font-mono">P</span>
           </div>
-          
-          <h2 className="text-2xl font-heading font-semibold">
-            Join Our Secure Community
-          </h2>
-          
-          <p className="text-lg font-sans text-white/90 leading-relaxed">
-            Create your account and experience the perfect blend of security and simplicity. Your journey starts with a simple signup.
-          </p>
-          
-          <div className="flex justify-center space-x-8 pt-8">
-            <div className="text-center">
-              <div className="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center mb-3 mx-auto">
-                <User className="w-8 h-8" />
-              </div>
-              <p className="text-sm font-sans">Personal</p>
-            </div>
-            <div className="text-center">
-              <div className="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center mb-3 mx-auto">
-                <Lock className="w-8 h-8" />
-              </div>
-              <p className="text-sm font-sans">Secure</p>
-            </div>
-            <div className="text-center">
-              <div className="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center mb-3 mx-auto">
-                <Mail className="w-8 h-8" />
-              </div>
-              <p className="text-sm font-sans">Connected</p>
-            </div>
-          </div>
+          <span className="text-base font-semibold font-mono text-zinc-900">Internal PaaS</span>
         </div>
-      </div>
-      <div className="flex items-center justify-center p-6 lg:p-12 bg-gray-50">
-        <Card className="w-full max-w-md shadow-lg border-0">
-          <CardHeader className="space-y-1 text-center">
-            <CardTitle className="text-2xl font-heading font-bold text-gray-900">
-              Create Account
-            </CardTitle>
-            <CardDescription className="text-gray-600 font-sans">
-              Sign up to get started with your secure account
-            </CardDescription>
-          </CardHeader>
-          
-          <CardContent>
-            <Form {...form}>
-              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-                <FormField
-                  control={form.control}
-                  name="name"
-                  render={({ field }: { field: any }) => (
-                    <FormItem>
-                      <FormLabel className="text-sm font-medium text-gray-700 font-sans">Name</FormLabel>
-                      <FormControl>
-                        <Input
-                          type="text"
-                          placeholder="Enter your name"
-                          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent font-sans"
-                          {...field}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                
-                <FormField
-                  control={form.control}
-                  name="email"
-                  render={({ field }: { field: any }) => (
-                    <FormItem>
-                      <FormLabel className="text-sm font-medium text-gray-700 font-sans">Email</FormLabel>
-                      <FormControl>
-                        <Input
-                          type="email"
-                          placeholder="Enter your email"
-                          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent font-sans"
-                          {...field}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                
-                <FormField
-                  control={form.control}
-                  name="password"
-                  render={({ field }: { field: any }) => (
-                    <FormItem>
-                      <FormLabel className="text-sm font-medium text-gray-700 font-sans">Password</FormLabel>
-                      <FormControl>
-                        <Input
-                          type="password"
-                          placeholder="Enter your password"
-                          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent font-sans"
-                          {...field}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                
-                <Button
-                  type="submit"
-                  className="w-full bg-primary hover:bg-primary-hover text-white font-medium py-3 px-4 rounded-lg transition-colors duration-200 font-sans"
-                  disabled={isRegisterLoading}
-                >
-                  {isRegisterLoading ? 'Creating account...' : 'Sign Up'}
-                </Button>
-              </form>
-            </Form>
-          </CardContent>
-          
-          <CardFooter className="flex flex-col space-y-2">
-            <div className="text-center text-sm text-gray-600 font-sans">
-              Already have an account?{' '}
-              <Link
-                to="/login"
-                className="font-medium text-primary hover:text-primary-hover transition-colors duration-200"
-              >
-                Sign in
-              </Link>
+
+        <div className="bg-white border border-zinc-200 rounded-lg p-8">
+          <h1 className="text-lg font-semibold text-zinc-900 mb-1">Create an account</h1>
+          <p className="text-sm text-zinc-500 mb-6">Start deploying in minutes.</p>
+
+          {/* GitHub (demo state) */}
+          <button
+            type="button"
+            onClick={handleGithub}
+            disabled={isRegisterLoading}
+            className="w-full flex items-center justify-center gap-2.5 border border-zinc-200 rounded py-2 text-sm text-zinc-700 hover:bg-zinc-50 transition-colors disabled:opacity-60 mb-5"
+          >
+            <Github className="w-4 h-4" />
+            Continue with GitHub
+          </button>
+
+          <div className="flex items-center gap-3 mb-5">
+            <div className="flex-1 border-t border-zinc-100" />
+            <span className="text-xs text-zinc-400">or</span>
+            <div className="flex-1 border-t border-zinc-100" />
+          </div>
+
+          <form onSubmit={handleSubmit} className="space-y-4">
+            {/* Name */}
+            <div>
+              <label className="block text-xs font-medium text-zinc-700 mb-1.5">Name</label>
+              <input
+                type="text"
+                placeholder="Ham"
+                value={form.name}
+                onChange={(e) => setForm({ ...form, name: e.target.value })}
+                autoComplete="name"
+                className={`w-full px-3 py-2 text-sm border rounded focus:outline-none focus:border-zinc-400 transition-colors ${
+                  errors.name ? "border-red-300 bg-red-50" : "border-zinc-200 bg-white"
+                }`}
+              />
+              {errors.name && <p className="mt-1 text-xs text-red-500">{errors.name}</p>}
             </div>
-          </CardFooter>
-        </Card>
+
+            {/* Email */}
+            <div>
+              <label className="block text-xs font-medium text-zinc-700 mb-1.5">Email</label>
+              <input
+                type="email"
+                placeholder="you@example.com"
+                value={form.email}
+                onChange={(e) => setForm({ ...form, email: e.target.value })}
+                autoComplete="email"
+                className={`w-full px-3 py-2 text-sm border rounded focus:outline-none focus:border-zinc-400 transition-colors ${
+                  errors.email ? "border-red-300 bg-red-50" : "border-zinc-200 bg-white"
+                }`}
+              />
+              {errors.email && <p className="mt-1 text-xs text-red-500">{errors.email}</p>}
+            </div>
+
+            {/* Password */}
+            <div>
+              <label className="block text-xs font-medium text-zinc-700 mb-1.5">Password</label>
+              <div className="relative">
+                <input
+                  type={showPassword ? "text" : "password"}
+                  placeholder="••••••••"
+                  value={form.password}
+                  onChange={(e) => setForm({ ...form, password: e.target.value })}
+                  autoComplete="new-password"
+                  className={`w-full pl-3 pr-9 py-2 text-sm border rounded focus:outline-none focus:border-zinc-400 transition-colors ${
+                    errors.password ? "border-red-300 bg-red-50" : "border-zinc-200 bg-white"
+                  }`}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-zinc-600"
+                >
+                  {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
+              </div>
+              {errors.password && <p className="mt-1 text-xs text-red-500">{errors.password}</p>}
+            </div>
+
+            <button
+              type="submit"
+              disabled={isRegisterLoading}
+              className="w-full py-2 bg-zinc-900 text-white text-sm font-medium rounded hover:bg-zinc-700 transition-colors disabled:opacity-60 flex items-center justify-center gap-2"
+            >
+              {isRegisterLoading && (
+                <svg className="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
+                </svg>
+              )}
+              {isRegisterLoading ? "Creating account..." : "Create account"}
+            </button>
+          </form>
+        </div>
+
+        <p className="text-center text-xs text-zinc-400 mt-4">
+          Already have an account?{" "}
+          <Link to="/login" className="text-zinc-600 hover:underline">
+            Sign in
+          </Link>
+        </p>
       </div>
     </div>
   )
