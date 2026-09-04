@@ -43,6 +43,7 @@ export const generateDockerfile = (
         COPY package*.json ./
         RUN npm install
         COPY . .
+        RUN npx prisma generate
         RUN npm run build
 
         FROM node:20-alpine
@@ -64,6 +65,7 @@ export const generateDockerfile = (
           COPY package*.json ./
           RUN npm install
           COPY . .
+          RUN npx prisma generate
           RUN addgroup -S appgroup && adduser -S appuser -G appgroup
           RUN chown -R appuser:appgroup /app
           USER appuser
@@ -78,6 +80,7 @@ export const generateDockerfile = (
           COPY package*.json ./
           RUN npm install --production
           COPY . .
+          RUN npx prisma generate
           RUN addgroup -S appgroup && adduser -S appuser -G appgroup
           RUN chown -R appuser:appgroup /app
           USER appuser

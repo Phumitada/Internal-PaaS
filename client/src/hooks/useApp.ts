@@ -8,8 +8,8 @@ export const useCreateApp = () => {
   return useMutation({
     mutationFn: (data: CreateAppPayload) => appService.createApp(data),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['App'] }) 
-      toast.success('App created successfully') 
+      queryClient.invalidateQueries({ queryKey: ['App'] })
+      toast.success('App created successfully')
     },
     onError: (error: any) => {
         toast.error(error?.response?.data?.message || 'Failed to create App')
@@ -21,7 +21,7 @@ export const useGetApps = (query: QueryApp) => {
     return useQuery({
       queryKey: ['App', query],
       queryFn: () => appService.getApp(query),
-      enabled: !!query.userId  
+      enabled: !!query.userId
     })
   }
 
@@ -32,9 +32,9 @@ export const useGetAllApps = (query: AdminQueryApp) => {
   })
 }
 
-export const useGetAppById = (id: string,options? : { refetchInterval?: number | false }) => {  
+export const useGetAppById = (id: string,options? : { refetchInterval?: number | false }) => {
   return useQuery({
-    queryKey: ['App', id],  
+    queryKey: ['App', id],
     queryFn: () => appService.getAppById(id),
     enabled: !!id,
     refetchInterval: options?.refetchInterval,
@@ -47,12 +47,28 @@ export const useUpdateApp = () => {
     mutationFn: ({ id, data }: { id: string; data: UpdateAppPayload }) =>
       appService.updateApp(id, data),
     onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: ['App', variables.id] })  
+      queryClient.invalidateQueries({ queryKey: ['App', variables.id] })
       queryClient.invalidateQueries({ queryKey: ['App'] })
       toast.success('App updated successfully')
     },
     onError: (error: any) => {
         toast.error(error?.response?.data?.message || 'Failed to update App')
+    }
+  })
+}
+
+export const useUpdateAppEnv = () => {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: ({ id, envVars }: { id: string; envVars: Record<string, string> }) =>
+      appService.updateAppEnv(id, envVars),
+    onSuccess: (data, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['App', variables.id] })
+      toast.success('Environment variables updated and redeploy triggered')
+      return data
+    },
+    onError: (error: any) => {
+        toast.error(error?.response?.data?.message || 'Failed to update environment variables')
     }
   })
 }

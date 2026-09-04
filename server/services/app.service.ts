@@ -1,5 +1,13 @@
 import { prisma } from '../db/prisma'
 import type { AdminQueryApp, CreateAppPayload, QueryApp, UpdateAppPayload } from '../types/app.type'
+import { buildQueue } from '../queues/build.queue'
+export type UpdateAppEnvPayload = Record<string, string>
+
+function assertOwnership(app: any, userId: string, role?: string) {
+  if (app.userId !== userId && role !== 'ADMIN') {
+    throw new Error('Forbidden')
+  }
+}
 
 export const appService = {
     createApp: async (payload:CreateAppPayload ) => {
@@ -117,7 +125,7 @@ export const appService = {
             where: {id}
         })
         if(!app) throw new Error("App not found")
-        if(app.userId !== userId && role !== 'ADMIN') throw new Error('Forbidden')
+        assertOwnership(app, userId, role)
 
         return app;
     },
@@ -127,7 +135,7 @@ export const appService = {
             where:{id}
         })
         if(!app) throw new Error("App not found")
-        if(app.userId !== userId && role !== 'ADMIN') throw new Error('Forbidden')
+        assertOwnership(app, userId, role)
         const update = await prisma.app.update({
             where:{id},
             data: payload,
@@ -149,5 +157,24 @@ export const appService = {
 
     adminDeleteApp: async(id:string) => {
         await prisma.app.delete({where: {id}})
+    },
+
+    updateAppEnv: async(id:string,userId:string,role:string,payload:UpdateAppEnvPayload) => {
+        const app = await prisma.app.findUnique({
+            where:{id}
+        })
+        if(!app) throw new Error("App not found")
+        assertOwnership(app, userId, role)
+        const update = await prisma.app.update({
+            where:{id},
+            data: { envVars : payload},
+        })
+        const deploy = await prisma.deploy.create({
+            data: { appId: app.id,repoUrl: app.repoUrl,status: 'PENDING'}
+        })
+
+        await buildQueue.add('build', { appId: app.id, repoUrl:app.repoUrl, deployId: deploy.id })
+        await prisma.app.update({ where: { id: app.id }, data: { status: 'BUILDING' } })
+        return { ...update, deployId: deploy.id }
     }
 }

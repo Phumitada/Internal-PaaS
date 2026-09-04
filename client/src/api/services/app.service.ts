@@ -1,4 +1,4 @@
-import { api,axiosPublic } from '@/api/client'
+import { api } from '@/api/client'
 import type { CreateAppPayload,QueryApp,AdminQueryApp,UpdateAppPayload } from '@/types/app.type'
 
 export const appService = {
@@ -24,6 +24,11 @@ export const appService = {
   
     updateApp: async (id: string, payload: UpdateAppPayload) => {  
       const response = await api.put(`/app/${id}`, payload)
+      return response.data.data
+    },
+  
+    updateAppEnv: async (id: string, envVars: Record<string, string>) => {
+      const response = await api.put(`/app/${id}/env`, envVars)
       return response.data.data
     },
   

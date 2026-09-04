@@ -2,6 +2,7 @@ import { Request, Response } from 'express'
 import { appService } from '../services/app.service'
 import { AuthRequest } from '../middleware/auth.middleware'
 import { createAppSchema, updateAppSchema } from '../validator/app.validator'
+import { success } from 'zod'
 
 export const appController = {
   createApp: async (req: Request, res: Response) => {
@@ -102,6 +103,25 @@ export const appController = {
         res.status(200).json({success:true,message:"Delete success"})
     } catch (error) {
         res.status(400).json({success:false,message:error.message})
+    }
+  },
+
+  updateAppEnv: async (req:Request,res:Response) => {
+    try{
+      const userId = (req as AuthRequest).user?.userId
+      const role = (req as AuthRequest).user?.role
+      const parsed = updateAppSchema.safeParse(req.body)
+      if(!parsed.success){
+        res.status(400).json({
+          success: false,
+          message: parsed.error.issues[0].message
+        })
+        return
+      }
+      const app = await appService.updateAppEnv(req.params.id,userId!,role!,req.body)
+      res.status(200).json({success:true,data:app})
+    }catch(error){
+      res.status(400).json({success:false,message:error.message})
     }
   }
 }

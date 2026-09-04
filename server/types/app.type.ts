@@ -23,9 +23,9 @@ export interface AdminQueryApp {
     sortOrder?: 'asc' | 'desc'
   }
 
-  export interface UpdateAppPayload {
-    name?: string     
-    repoUrl?: string
-    status?: AppStatus
-    rootDir?: string
-  }
+export interface UpdateAppPayload {
+  name?: string     
+  repoUrl?: string
+  status?: AppStatus
+  rootDir?: string
+}

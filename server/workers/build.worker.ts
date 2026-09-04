@@ -8,6 +8,8 @@ import tar from 'tar-fs'
 import Docker from 'dockerode'
 import { appendLog } from '../lib/logStore'
 import { buildEvents } from '../lib/emitter'
+import { buildEnvArray } from '../lib/buildEnvArray'
+import { getInternalPort } from '../lib/getInternalPort'
 
 export interface BuildJobData {
   appId: string
@@ -79,6 +81,15 @@ const worker = new Worker('build', async (job: Job<BuildJobData>) => {
     const imageName = `pass-${appId}:latest`
     const tarStream = tar.pack(workDir)
 
+    // Capture old image ID for cleanup after successful build
+    let oldImageId: string | null = null
+    try {
+      const oldImage = await docker.getImage(imageName).inspect()
+      oldImageId = oldImage.Id
+    } catch (e) {
+      // Image doesn't exist yet, that's fine
+    }
+
     await new Promise<void>((resolve, reject) => {
       docker.buildImage(tarStream, { t: imageName }, (err, stream) => {
         if (err) return reject(err)
@@ -86,7 +97,16 @@ const worker = new Worker('build', async (job: Job<BuildJobData>) => {
         stream.on('data', (chunk) => {
           const text = chunk.toString()
           process.stdout.write(text)
-          buildLog += text
+          
+          // Strip Docker stream prefixes like {"stream":"..."} or [stream] ...
+          const cleanText = text
+            .replace(/^\s*\{["']stream["']\s*:\s*["']?([^"']*)["']?\s*\}\s*/gm, '$1')
+            .replace(/^\s*\[stream\]\s*/gm, '')
+            .replace(/^\s*\[[^\]]*\]\s*/gm, '')
+          
+          buildLog += cleanText
+          appendLog(deployId, cleanText)
+          buildEvents.emit('log', { deployId, msg: cleanText })
         })
         stream.on('end', resolve)
         stream.on('error', reject)
@@ -94,19 +114,32 @@ const worker = new Worker('build', async (job: Job<BuildJobData>) => {
     })
     log('✓ Image built')
 
+    // Remove old image after successful build
+    if (oldImageId) {
+      try {
+        const oldImage = docker.getImage(oldImageId)
+        await oldImage.remove()
+        log('✓ Removed old image')
+      } catch (e) {
+        log('⚠ Failed to remove old image (non-critical)')
+      }
+    }
+
     log('=== Step 5: Run container ===')
     try {
       const old = docker.getContainer(`pass-${appId}`)
       await old.stop()
       await old.remove()
     } catch (e) {}
-
+    const internalPort = getInternalPort(framework)
     const container = await docker.createContainer({
       Image: imageName,
       name: `pass-${appId}`,
-      ExposedPorts: { '3000/tcp': {} },
+      Tty: true,
+      ExposedPorts: { [`${internalPort}/tcp`]: {} },
+      Env: buildEnvArray((app?.envVars as Record<string, string>) ?? {}, internalPort),
       HostConfig: {
-        PortBindings: { '3000/tcp': [{ HostPort: '0' }] },
+        PortBindings: { [`${internalPort}/tcp`]: [{ HostPort: '0' }] },
         RestartPolicy: { Name: 'unless-stopped' }
       }
     })
@@ -114,7 +147,7 @@ const worker = new Worker('build', async (job: Job<BuildJobData>) => {
     await container.start()
 
     const info = await container.inspect()
-    const port = Number(info.NetworkSettings.Ports['3000/tcp'][0].HostPort)
+    const port = Number(info.NetworkSettings.Ports[`${internalPort}/tcp`][0].HostPort)
     log(`✓ Container started on port: ${port}`)
 
     log('=== Step 6: Health check ===')
@@ -147,9 +180,13 @@ const worker = new Worker('build', async (job: Job<BuildJobData>) => {
       data: { status: 'RUNNING', port }
     })
 
+    const fullLog = containerLogText
+      ? `${buildLog}\n--- container runtime log ---\n${containerLogText}`
+      : buildLog
+    const safeLog = fullLog.replace(/\u0000/g, '')
     await prisma.deploy.update({
       where: { id: deployId },
-      data: { status: 'SUCCESS', log: containerLogText }
+      data: { status: 'SUCCESS', log: safeLog }
     })
 
     log('=== Deploy complete! ===')
@@ -162,11 +199,16 @@ const worker = new Worker('build', async (job: Job<BuildJobData>) => {
       data: { status: 'ERROR' }
     }).catch(() => {})
 
+    const fullLog = containerLogText
+      ? `${buildLog}\n--- container runtime log ---\n${containerLogText}`
+      : buildLog
+    const failureLog = fullLog || error.message
+    const safeLog = failureLog.replace(/\u0000/g, '')
     await prisma.deploy.update({
       where: { id: deployId },
       data: {
         status: 'FAILED',
-        log: containerLogText || error.message
+        log: safeLog
       }
     }).catch(() => {})
 

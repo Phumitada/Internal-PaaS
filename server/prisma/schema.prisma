@@ -42,6 +42,7 @@ model App {
   deploys   Deploy[]
   container Container?
   rootDir String @default(".")
+  envVars Json?
 
   @@map("apps")
 }

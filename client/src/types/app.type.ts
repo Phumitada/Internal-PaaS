@@ -1,6 +1,7 @@
 export interface CreateAppPayload {
   name: string;
   repoUrl: string;
+  rootDir?: string;
 }
 
 export interface QueryApp {

@@ -35,5 +35,12 @@ export const deployService = {
       limit: limitNum,
       totalPages: Math.ceil(total / limitNum)
     }
+  },
+
+  getDeployById: async (deployId: string) => {
+    const deploy = await prisma.deploy.findUnique({
+      where: { id: deployId }
+    })
+    return deploy
   }
 }
