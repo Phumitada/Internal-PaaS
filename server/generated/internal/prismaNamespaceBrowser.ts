@@ -113,7 +113,8 @@ export const DeployScalarFieldEnum = {
   log: 'log',
   appId: 'appId',
   createdAt: 'createdAt',
-  updatedAt: 'updatedAt'
+  updatedAt: 'updatedAt',
+  imageUrl: 'imageUrl'
 } as const
 
 export type DeployScalarFieldEnum = (typeof DeployScalarFieldEnum)[keyof typeof DeployScalarFieldEnum]

@@ -33,6 +33,7 @@ export type DeployMinAggregateOutputType = {
   appId: string | null
   createdAt: Date | null
   updatedAt: Date | null
+  imageUrl: string | null
 }
 
 export type DeployMaxAggregateOutputType = {
@@ -44,6 +45,7 @@ export type DeployMaxAggregateOutputType = {
   appId: string | null
   createdAt: Date | null
   updatedAt: Date | null
+  imageUrl: string | null
 }
 
 export type DeployCountAggregateOutputType = {
@@ -55,6 +57,7 @@ export type DeployCountAggregateOutputType = {
   appId: number
   createdAt: number
   updatedAt: number
+  imageUrl: number
   _all: number
 }
 
@@ -68,6 +71,7 @@ export type DeployMinAggregateInputType = {
   appId?: true
   createdAt?: true
   updatedAt?: true
+  imageUrl?: true
 }
 
 export type DeployMaxAggregateInputType = {
@@ -79,6 +83,7 @@ export type DeployMaxAggregateInputType = {
   appId?: true
   createdAt?: true
   updatedAt?: true
+  imageUrl?: true
 }
 
 export type DeployCountAggregateInputType = {
@@ -90,6 +95,7 @@ export type DeployCountAggregateInputType = {
   appId?: true
   createdAt?: true
   updatedAt?: true
+  imageUrl?: true
   _all?: true
 }
 
@@ -174,6 +180,7 @@ export type DeployGroupByOutputType = {
   appId: string
   createdAt: Date
   updatedAt: Date
+  imageUrl: string | null
   _count: DeployCountAggregateOutputType | null
   _min: DeployMinAggregateOutputType | null
   _max: DeployMaxAggregateOutputType | null
@@ -206,6 +213,7 @@ export type DeployWhereInput = {
   appId?: Prisma.StringFilter<"Deploy"> | string
   createdAt?: Prisma.DateTimeFilter<"Deploy"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"Deploy"> | Date | string
+  imageUrl?: Prisma.StringNullableFilter<"Deploy"> | string | null
   app?: Prisma.XOR<Prisma.AppScalarRelationFilter, Prisma.AppWhereInput>
   container?: Prisma.XOR<Prisma.ContainerNullableScalarRelationFilter, Prisma.ContainerWhereInput> | null
 }
@@ -219,6 +227,7 @@ export type DeployOrderByWithRelationInput = {
   appId?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
+  imageUrl?: Prisma.SortOrderInput | Prisma.SortOrder
   app?: Prisma.AppOrderByWithRelationInput
   container?: Prisma.ContainerOrderByWithRelationInput
 }
@@ -235,6 +244,7 @@ export type DeployWhereUniqueInput = Prisma.AtLeast<{
   appId?: Prisma.StringFilter<"Deploy"> | string
   createdAt?: Prisma.DateTimeFilter<"Deploy"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"Deploy"> | Date | string
+  imageUrl?: Prisma.StringNullableFilter<"Deploy"> | string | null
   app?: Prisma.XOR<Prisma.AppScalarRelationFilter, Prisma.AppWhereInput>
   container?: Prisma.XOR<Prisma.ContainerNullableScalarRelationFilter, Prisma.ContainerWhereInput> | null
 }, "id">
@@ -248,6 +258,7 @@ export type DeployOrderByWithAggregationInput = {
   appId?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
+  imageUrl?: Prisma.SortOrderInput | Prisma.SortOrder
   _count?: Prisma.DeployCountOrderByAggregateInput
   _max?: Prisma.DeployMaxOrderByAggregateInput
   _min?: Prisma.DeployMinOrderByAggregateInput
@@ -265,6 +276,7 @@ export type DeployScalarWhereWithAggregatesInput = {
   appId?: Prisma.StringWithAggregatesFilter<"Deploy"> | string
   createdAt?: Prisma.DateTimeWithAggregatesFilter<"Deploy"> | Date | string
   updatedAt?: Prisma.DateTimeWithAggregatesFilter<"Deploy"> | Date | string
+  imageUrl?: Prisma.StringNullableWithAggregatesFilter<"Deploy"> | string | null
 }
 
 export type DeployCreateInput = {
@@ -275,6 +287,7 @@ export type DeployCreateInput = {
   log?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
+  imageUrl?: string | null
   app: Prisma.AppCreateNestedOneWithoutDeploysInput
   container?: Prisma.ContainerCreateNestedOneWithoutDeployInput
 }
@@ -288,6 +301,7 @@ export type DeployUncheckedCreateInput = {
   appId: string
   createdAt?: Date | string
   updatedAt?: Date | string
+  imageUrl?: string | null
   container?: Prisma.ContainerUncheckedCreateNestedOneWithoutDeployInput
 }
 
@@ -299,6 +313,7 @@ export type DeployUpdateInput = {
   log?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  imageUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   app?: Prisma.AppUpdateOneRequiredWithoutDeploysNestedInput
   container?: Prisma.ContainerUpdateOneWithoutDeployNestedInput
 }
@@ -312,6 +327,7 @@ export type DeployUncheckedUpdateInput = {
   appId?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  imageUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   container?: Prisma.ContainerUncheckedUpdateOneWithoutDeployNestedInput
 }
 
@@ -324,6 +340,7 @@ export type DeployCreateManyInput = {
   appId: string
   createdAt?: Date | string
   updatedAt?: Date | string
+  imageUrl?: string | null
 }
 
 export type DeployUpdateManyMutationInput = {
@@ -334,6 +351,7 @@ export type DeployUpdateManyMutationInput = {
   log?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  imageUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
 }
 
 export type DeployUncheckedUpdateManyInput = {
@@ -345,6 +363,7 @@ export type DeployUncheckedUpdateManyInput = {
   appId?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  imageUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
 }
 
 export type DeployListRelationFilter = {
@@ -366,6 +385,7 @@ export type DeployCountOrderByAggregateInput = {
   appId?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
+  imageUrl?: Prisma.SortOrder
 }
 
 export type DeployMaxOrderByAggregateInput = {
@@ -377,6 +397,7 @@ export type DeployMaxOrderByAggregateInput = {
   appId?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
+  imageUrl?: Prisma.SortOrder
 }
 
 export type DeployMinOrderByAggregateInput = {
@@ -388,6 +409,7 @@ export type DeployMinOrderByAggregateInput = {
   appId?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
+  imageUrl?: Prisma.SortOrder
 }
 
 export type DeployScalarRelationFilter = {
@@ -463,6 +485,7 @@ export type DeployCreateWithoutAppInput = {
   log?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
+  imageUrl?: string | null
   container?: Prisma.ContainerCreateNestedOneWithoutDeployInput
 }
 
@@ -474,6 +497,7 @@ export type DeployUncheckedCreateWithoutAppInput = {
   log?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
+  imageUrl?: string | null
   container?: Prisma.ContainerUncheckedCreateNestedOneWithoutDeployInput
 }
 
@@ -515,6 +539,7 @@ export type DeployScalarWhereInput = {
   appId?: Prisma.StringFilter<"Deploy"> | string
   createdAt?: Prisma.DateTimeFilter<"Deploy"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"Deploy"> | Date | string
+  imageUrl?: Prisma.StringNullableFilter<"Deploy"> | string | null
 }
 
 export type DeployCreateWithoutContainerInput = {
@@ -525,6 +550,7 @@ export type DeployCreateWithoutContainerInput = {
   log?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
+  imageUrl?: string | null
   app: Prisma.AppCreateNestedOneWithoutDeploysInput
 }
 
@@ -537,6 +563,7 @@ export type DeployUncheckedCreateWithoutContainerInput = {
   appId: string
   createdAt?: Date | string
   updatedAt?: Date | string
+  imageUrl?: string | null
 }
 
 export type DeployCreateOrConnectWithoutContainerInput = {
@@ -563,6 +590,7 @@ export type DeployUpdateWithoutContainerInput = {
   log?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  imageUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   app?: Prisma.AppUpdateOneRequiredWithoutDeploysNestedInput
 }
 
@@ -575,6 +603,7 @@ export type DeployUncheckedUpdateWithoutContainerInput = {
   appId?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  imageUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
 }
 
 export type DeployCreateManyAppInput = {
@@ -585,6 +614,7 @@ export type DeployCreateManyAppInput = {
   log?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
+  imageUrl?: string | null
 }
 
 export type DeployUpdateWithoutAppInput = {
@@ -595,6 +625,7 @@ export type DeployUpdateWithoutAppInput = {
   log?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  imageUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   container?: Prisma.ContainerUpdateOneWithoutDeployNestedInput
 }
 
@@ -606,6 +637,7 @@ export type DeployUncheckedUpdateWithoutAppInput = {
   log?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  imageUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   container?: Prisma.ContainerUncheckedUpdateOneWithoutDeployNestedInput
 }
 
@@ -617,6 +649,7 @@ export type DeployUncheckedUpdateManyWithoutAppInput = {
   log?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  imageUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
 }
 
 
@@ -630,6 +663,7 @@ export type DeploySelect<ExtArgs extends runtime.Types.Extensions.InternalArgs =
   appId?: boolean
   createdAt?: boolean
   updatedAt?: boolean
+  imageUrl?: boolean
   app?: boolean | Prisma.AppDefaultArgs<ExtArgs>
   container?: boolean | Prisma.Deploy$containerArgs<ExtArgs>
 }, ExtArgs["result"]["deploy"]>
@@ -643,6 +677,7 @@ export type DeploySelectCreateManyAndReturn<ExtArgs extends runtime.Types.Extens
   appId?: boolean
   createdAt?: boolean
   updatedAt?: boolean
+  imageUrl?: boolean
   app?: boolean | Prisma.AppDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["deploy"]>
 
@@ -655,6 +690,7 @@ export type DeploySelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Extens
   appId?: boolean
   createdAt?: boolean
   updatedAt?: boolean
+  imageUrl?: boolean
   app?: boolean | Prisma.AppDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["deploy"]>
 
@@ -667,9 +703,10 @@ export type DeploySelectScalar = {
   appId?: boolean
   createdAt?: boolean
   updatedAt?: boolean
+  imageUrl?: boolean
 }
 
-export type DeployOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "status" | "repoUrl" | "commit" | "log" | "appId" | "createdAt" | "updatedAt", ExtArgs["result"]["deploy"]>
+export type DeployOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "status" | "repoUrl" | "commit" | "log" | "appId" | "createdAt" | "updatedAt" | "imageUrl", ExtArgs["result"]["deploy"]>
 export type DeployInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   app?: boolean | Prisma.AppDefaultArgs<ExtArgs>
   container?: boolean | Prisma.Deploy$containerArgs<ExtArgs>
@@ -696,6 +733,7 @@ export type $DeployPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs
     appId: string
     createdAt: Date
     updatedAt: Date
+    imageUrl: string | null
   }, ExtArgs["result"]["deploy"]>
   composites: {}
 }
@@ -1129,6 +1167,7 @@ export interface DeployFieldRefs {
   readonly appId: Prisma.FieldRef<"Deploy", 'String'>
   readonly createdAt: Prisma.FieldRef<"Deploy", 'DateTime'>
   readonly updatedAt: Prisma.FieldRef<"Deploy", 'DateTime'>
+  readonly imageUrl: Prisma.FieldRef<"Deploy", 'String'>
 }
     
 

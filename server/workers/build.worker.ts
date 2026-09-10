@@ -23,6 +23,14 @@ const connection = {
   maxRetriesPerRequest: null as null
 }
 
+const authconfig = {
+  username: 'Phumitada',
+  password: process.env.GITHUB_PAT,
+  serveraddress: 'ghcr.io'
+}
+
+const namespace = process.env.NAME_SPACE
+
 const docker = new Docker()
 
 const worker = new Worker('build', async (job: Job<BuildJobData>) => {
@@ -43,6 +51,11 @@ const worker = new Worker('build', async (job: Job<BuildJobData>) => {
     await simpleGit().clone(repoUrl, buildDir)
     log('✓ Cloned')
 
+    const git = simpleGit(buildDir)
+    const commitSha = await git.revparse(['HEAD'])
+    const shortSha = commitSha.substring(0, 7)
+    log(`✓ Commit: ${shortSha}`)
+
     log('=== Step 2: Detect runtime ===')
     const app = await prisma.app.findUnique({ where: { id: appId } })
     const rootDir = app?.rootDir || '.'
@@ -62,14 +75,16 @@ const worker = new Worker('build', async (job: Job<BuildJobData>) => {
     else buildStrategy = 'node'
 
     const startCommand = scripts.start || 'node index.js'
+    const hasPrisma = fs.existsSync(path.join(workDir, 'prisma', 'schema.prisma'))
     log(`✓ Detected: framework=${framework} strategy=${buildStrategy}`)
+    const imageTag = `ghcr.io/${namespace}/${app!.name}:${shortSha}`
 
     log('=== Step 3: Generate Dockerfile ===')
     const dockerfilePath = path.join(workDir, 'Dockerfile')
     if (fs.existsSync(dockerfilePath)) {
       log('✓ Dockerfile already exists')
     } else {
-      const dockerfile = generateDockerfile(framework, buildStrategy, startCommand)
+      const dockerfile = generateDockerfile(framework, buildStrategy, startCommand, hasPrisma)
       fs.writeFileSync(dockerfilePath, dockerfile)
       if (framework === 'react') {
         fs.writeFileSync(path.join(workDir, 'nginx.conf'), generateNginxConf())
@@ -81,17 +96,18 @@ const worker = new Worker('build', async (job: Job<BuildJobData>) => {
     const imageName = `pass-${appId}:latest`
     const tarStream = tar.pack(workDir)
 
-    // Capture old image ID for cleanup after successful build
-    let oldImageId: string | null = null
-    try {
-      const oldImage = await docker.getImage(imageName).inspect()
-      oldImageId = oldImage.Id
-    } catch (e) {
-      // Image doesn't exist yet, that's fine
-    }
+    const previousDeploy = await prisma.deploy.findFirst({
+      where: {
+        appId,
+        id: { not: deployId },
+        imageUrl: { not: null }
+      },
+      orderBy: { createdAt: 'desc' }
+    })
+    const oldImageUrl = previousDeploy?.imageUrl ?? null
 
     await new Promise<void>((resolve, reject) => {
-      docker.buildImage(tarStream, { t: imageName }, (err, stream) => {
+      docker.buildImage(tarStream, { t: imageTag, platform: 'linux/amd64' }, (err, stream) => {
         if (err) return reject(err)
         if (!stream) return reject(new Error('No stream'))
         stream.on('data', (chunk) => {
@@ -114,16 +130,16 @@ const worker = new Worker('build', async (job: Job<BuildJobData>) => {
     })
     log('✓ Image built')
 
-    // Remove old image after successful build
-    if (oldImageId) {
+    if (oldImageUrl) {
       try {
-        const oldImage = docker.getImage(oldImageId)
+        const oldImage = docker.getImage(oldImageUrl)
         await oldImage.remove()
         log('✓ Removed old image')
       } catch (e) {
         log('⚠ Failed to remove old image (non-critical)')
       }
     }
+
 
     log('=== Step 5: Run container ===')
     try {
@@ -133,7 +149,7 @@ const worker = new Worker('build', async (job: Job<BuildJobData>) => {
     } catch (e) {}
     const internalPort = getInternalPort(framework)
     const container = await docker.createContainer({
-      Image: imageName,
+      Image: imageTag,
       name: `pass-${appId}`,
       Tty: true,
       ExposedPorts: { [`${internalPort}/tcp`]: {} },
@@ -175,21 +191,34 @@ const worker = new Worker('build', async (job: Job<BuildJobData>) => {
 
     log('✓ Container is stable')
 
-    await prisma.app.update({
-      where: { id: appId },
-      data: { status: 'RUNNING', port }
-    })
-
     const fullLog = containerLogText
       ? `${buildLog}\n--- container runtime log ---\n${containerLogText}`
       : buildLog
     const safeLog = fullLog.replace(/\u0000/g, '')
+
+    log('=== Step 7: Push Image to GHCR ===')
+    const image = docker.getImage(imageTag)
+    await new Promise<void>((resolve,rejects) => {
+      image.push({authconfig}, (err,stream) => {
+        if (err) return rejects(err)
+        if (!stream) return rejects(new Error('No push stream'))
+        docker.modem.followProgress(
+          stream,
+          (err, output) => (err ? rejects(err) : resolve()),
+          (event) => process.stdout.write(event.status + '\n')
+        );
+      })
+    })
+    await prisma.app.update({
+      where: { id: appId },
+      data: { status: 'RUNNING', port }
+    })
+    
     await prisma.deploy.update({
       where: { id: deployId },
-      data: { status: 'SUCCESS', log: safeLog }
+      data: { status: 'SUCCESS', log: safeLog, imageUrl: imageTag }
     })
-
-    log('=== Deploy complete! ===')
+    log('✓ Image pushed to GHCR');
 
   } catch (error: any) {
     console.error('=== Build failed:', error.message, '===')

@@ -41,8 +41,8 @@ model App {
   updatedAt DateTime   @updatedAt
   deploys   Deploy[]
   container Container?
-  rootDir String @default(".")
-  envVars Json?
+  rootDir   String @default(".")
+  envVars   Json?
 
   @@map("apps")
 }
@@ -58,6 +58,7 @@ model Deploy {
   createdAt DateTime     @default(now())
   updatedAt DateTime     @updatedAt
   container Container?
+  imageUrl  String?
 
   @@map("deploys")
 }

@@ -12,7 +12,8 @@ server {
 export const generateDockerfile = (
   framework: string,
   buildStrategy: string,
-  startCommand: string
+  startCommand: string,
+  hasPrisma: boolean
 ): string => {
   if (framework === 'react') {
     return `
@@ -35,6 +36,12 @@ export const generateDockerfile = (
   }
 
   if (framework === 'express') {
+    // ถ้ามี prisma/schema.prisma ใน repo -> migrate deploy ก่อน start เสมอ
+    // sh -c ใช้เพราะ exec form ("CMD [...]") ไม่รองรับ && เลย ต้องผ่าน shell
+    const startCmd = hasPrisma
+      ? `CMD ["sh", "-c", "npx prisma migrate deploy && npm start"]`
+      : `CMD ["sh", "-c", "npm start"]`
+
     switch (buildStrategy) {
       case 'build':
         return `
@@ -48,44 +55,45 @@ export const generateDockerfile = (
 
         FROM node:20-alpine
         WORKDIR /app
+        ENV NODE_ENV=production
         COPY package*.json ./
         RUN npm install --production
         COPY --from=builder /app/dist ./dist
-        RUN addgroup -S appgroup && adduser -S appuser -G appgroup
-        RUN chown -R appuser:appgroup /app
+        COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
+        RUN addgroup -S appgroup && adduser -S appuser -G appgroup && chown -R appuser:appgroup /app
         USER appuser
         EXPOSE 3000
-        CMD ["npm","start"]
+        ${startCmd}
         `.trim()
 
       case 'ts-node':
         return `
           FROM node:20-alpine
           WORKDIR /app
+          ENV NODE_ENV=production
           COPY package*.json ./
           RUN npm install
           COPY . .
           RUN npx prisma generate
-          RUN addgroup -S appgroup && adduser -S appuser -G appgroup
-          RUN chown -R appuser:appgroup /app
+          RUN addgroup -S appgroup && adduser -S appuser -G appgroup && chown -R appuser:appgroup /app
           USER appuser
           EXPOSE 3000
-          CMD ["npm","start"]
+          ${startCmd}
           `.trim()
 
       case 'node':
         return `
           FROM node:20-alpine
           WORKDIR /app
+          ENV NODE_ENV=production
           COPY package*.json ./
           RUN npm install --production
           COPY . .
           RUN npx prisma generate
-          RUN addgroup -S appgroup && adduser -S appuser -G appgroup
-          RUN chown -R appuser:appgroup /app
+          RUN addgroup -S appgroup && adduser -S appuser -G appgroup && chown -R appuser:appgroup /app
           USER appuser
           EXPOSE 3000
-          CMD ["sh", "-c", "npm start"]
+          ${startCmd}
           `.trim()
     }
   }
