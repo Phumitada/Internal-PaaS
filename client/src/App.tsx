@@ -10,6 +10,7 @@ import { ServicesList, NewService, ServiceDetail } from "@/pages/Services"
 import Tutorial from "@/pages/Tutorial"
 import AdminDashboard from "@/pages/Admin"
 import Settings from "@/pages/Settings"
+import Databases from "@/pages/Databases"
 
 // ─── Route guards ─────────────────────────────────────────────────────────────
 
@@ -61,6 +62,7 @@ export default function App() {
             <Route path="/services" element={<ServicesList />} />
             <Route path="/services/new" element={<NewService />} />
             <Route path="/services/:id" element={<ServiceDetail />} />
+            <Route path="/databases" element={<Databases />} />
             <Route path="/tutorial" element={<Tutorial />} />
             <Route path="/settings" element={<Settings />} />
             <Route element={<AdminRoute />}>

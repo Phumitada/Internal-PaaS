@@ -7,6 +7,7 @@ import authRoutes from './routes/auth.routes'
 import appRoutes from './routes/app.routes'
 import webhookRouter from './routes/webhook.routes'
 import deployRouter from './routes/deploy.routes'
+import databaseRouter from './routes/database.routes'
 import { setupSocket } from './lib/socket'
  
 dotenv.config()
@@ -35,6 +36,7 @@ app.use('/api/auth', authRoutes)
 app.use('/api/app', appRoutes)
 app.use('/api/webhook',webhookRouter)
 app.use('/api/deploy',deployRouter)
+app.use('/api/database',databaseRouter)
 
 // Execute
 const server = app.listen(PORT, () => {   

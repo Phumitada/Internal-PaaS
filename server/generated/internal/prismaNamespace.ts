@@ -387,7 +387,8 @@ export const ModelName = {
   User: 'User',
   App: 'App',
   Deploy: 'Deploy',
-  Container: 'Container'
+  Container: 'Container',
+  Database: 'Database'
 } as const
 
 export type ModelName = (typeof ModelName)[keyof typeof ModelName]
@@ -403,7 +404,7 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
     omit: GlobalOmitOptions
   }
   meta: {
-    modelProps: "user" | "app" | "deploy" | "container"
+    modelProps: "user" | "app" | "deploy" | "container" | "database"
     txIsolationLevel: TransactionIsolationLevel
   }
   model: {
@@ -703,6 +704,80 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
         }
       }
     }
+    Database: {
+      payload: Prisma.$DatabasePayload<ExtArgs>
+      fields: Prisma.DatabaseFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.DatabaseFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DatabasePayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.DatabaseFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DatabasePayload>
+        }
+        findFirst: {
+          args: Prisma.DatabaseFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DatabasePayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.DatabaseFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DatabasePayload>
+        }
+        findMany: {
+          args: Prisma.DatabaseFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DatabasePayload>[]
+        }
+        create: {
+          args: Prisma.DatabaseCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DatabasePayload>
+        }
+        createMany: {
+          args: Prisma.DatabaseCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.DatabaseCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DatabasePayload>[]
+        }
+        delete: {
+          args: Prisma.DatabaseDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DatabasePayload>
+        }
+        update: {
+          args: Prisma.DatabaseUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DatabasePayload>
+        }
+        deleteMany: {
+          args: Prisma.DatabaseDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.DatabaseUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.DatabaseUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DatabasePayload>[]
+        }
+        upsert: {
+          args: Prisma.DatabaseUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DatabasePayload>
+        }
+        aggregate: {
+          args: Prisma.DatabaseAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateDatabase>
+        }
+        groupBy: {
+          args: Prisma.DatabaseGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.DatabaseGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.DatabaseCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.DatabaseCountAggregateOutputType> | number
+        }
+      }
+    }
   }
 } & {
   other: {
@@ -803,6 +878,20 @@ export const ContainerScalarFieldEnum = {
 } as const
 
 export type ContainerScalarFieldEnum = (typeof ContainerScalarFieldEnum)[keyof typeof ContainerScalarFieldEnum]
+
+
+export const DatabaseScalarFieldEnum = {
+  id: 'id',
+  name: 'name',
+  engine: 'engine',
+  storage: 'storage',
+  status: 'status',
+  userId: 'userId',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type DatabaseScalarFieldEnum = (typeof DatabaseScalarFieldEnum)[keyof typeof DatabaseScalarFieldEnum]
 
 
 export const SortOrder = {
@@ -965,6 +1054,34 @@ export type ListEnumContainerStatusFieldRefInput<$PrismaModel> = FieldRefInputTy
 
 
 /**
+ * Reference to a field of type 'DatabaseEngine'
+ */
+export type EnumDatabaseEngineFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'DatabaseEngine'>
+    
+
+
+/**
+ * Reference to a field of type 'DatabaseEngine[]'
+ */
+export type ListEnumDatabaseEngineFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'DatabaseEngine[]'>
+    
+
+
+/**
+ * Reference to a field of type 'DatabaseStatus'
+ */
+export type EnumDatabaseStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'DatabaseStatus'>
+    
+
+
+/**
+ * Reference to a field of type 'DatabaseStatus[]'
+ */
+export type ListEnumDatabaseStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'DatabaseStatus[]'>
+    
+
+
+/**
  * Reference to a field of type 'Float'
  */
 export type FloatFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Float'>
@@ -1076,6 +1193,7 @@ export type GlobalOmitConfig = {
   app?: Prisma.AppOmit
   deploy?: Prisma.DeployOmit
   container?: Prisma.ContainerOmit
+  database?: Prisma.DatabaseOmit
 }
 
 /* Types for Logging */

@@ -17,11 +17,11 @@ export const useCreateApp = () => {
   })
 }
 
-export const useGetApps = (query: QueryApp) => {
+export const useGetApps = (query?: QueryApp) => {
     return useQuery({
       queryKey: ['App', query],
-      queryFn: () => appService.getApp(query),
-      enabled: !!query.userId
+      queryFn: () => appService.getApp(query || { userId: '' }),
+      enabled: !!query?.userId
     })
   }
 

@@ -271,6 +271,7 @@ export type AppWhereInput = {
   user?: Prisma.XOR<Prisma.UserScalarRelationFilter, Prisma.UserWhereInput>
   deploys?: Prisma.DeployListRelationFilter
   container?: Prisma.XOR<Prisma.ContainerNullableScalarRelationFilter, Prisma.ContainerWhereInput> | null
+  databases?: Prisma.DatabaseListRelationFilter
 }
 
 export type AppOrderByWithRelationInput = {
@@ -289,6 +290,7 @@ export type AppOrderByWithRelationInput = {
   user?: Prisma.UserOrderByWithRelationInput
   deploys?: Prisma.DeployOrderByRelationAggregateInput
   container?: Prisma.ContainerOrderByWithRelationInput
+  databases?: Prisma.DatabaseOrderByRelationAggregateInput
 }
 
 export type AppWhereUniqueInput = Prisma.AtLeast<{
@@ -310,6 +312,7 @@ export type AppWhereUniqueInput = Prisma.AtLeast<{
   user?: Prisma.XOR<Prisma.UserScalarRelationFilter, Prisma.UserWhereInput>
   deploys?: Prisma.DeployListRelationFilter
   container?: Prisma.XOR<Prisma.ContainerNullableScalarRelationFilter, Prisma.ContainerWhereInput> | null
+  databases?: Prisma.DatabaseListRelationFilter
 }, "id" | "name">
 
 export type AppOrderByWithAggregationInput = {
@@ -365,6 +368,7 @@ export type AppCreateInput = {
   user: Prisma.UserCreateNestedOneWithoutAppsInput
   deploys?: Prisma.DeployCreateNestedManyWithoutAppInput
   container?: Prisma.ContainerCreateNestedOneWithoutAppInput
+  databases?: Prisma.DatabaseCreateNestedManyWithoutAppsInput
 }
 
 export type AppUncheckedCreateInput = {
@@ -382,6 +386,7 @@ export type AppUncheckedCreateInput = {
   envVars?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   deploys?: Prisma.DeployUncheckedCreateNestedManyWithoutAppInput
   container?: Prisma.ContainerUncheckedCreateNestedOneWithoutAppInput
+  databases?: Prisma.DatabaseUncheckedCreateNestedManyWithoutAppsInput
 }
 
 export type AppUpdateInput = {
@@ -399,6 +404,7 @@ export type AppUpdateInput = {
   user?: Prisma.UserUpdateOneRequiredWithoutAppsNestedInput
   deploys?: Prisma.DeployUpdateManyWithoutAppNestedInput
   container?: Prisma.ContainerUpdateOneWithoutAppNestedInput
+  databases?: Prisma.DatabaseUpdateManyWithoutAppsNestedInput
 }
 
 export type AppUncheckedUpdateInput = {
@@ -416,6 +422,7 @@ export type AppUncheckedUpdateInput = {
   envVars?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   deploys?: Prisma.DeployUncheckedUpdateManyWithoutAppNestedInput
   container?: Prisma.ContainerUncheckedUpdateOneWithoutAppNestedInput
+  databases?: Prisma.DatabaseUncheckedUpdateManyWithoutAppsNestedInput
 }
 
 export type AppCreateManyInput = {
@@ -610,6 +617,44 @@ export type AppUpdateOneRequiredWithoutContainerNestedInput = {
   update?: Prisma.XOR<Prisma.XOR<Prisma.AppUpdateToOneWithWhereWithoutContainerInput, Prisma.AppUpdateWithoutContainerInput>, Prisma.AppUncheckedUpdateWithoutContainerInput>
 }
 
+export type AppCreateNestedManyWithoutDatabasesInput = {
+  create?: Prisma.XOR<Prisma.AppCreateWithoutDatabasesInput, Prisma.AppUncheckedCreateWithoutDatabasesInput> | Prisma.AppCreateWithoutDatabasesInput[] | Prisma.AppUncheckedCreateWithoutDatabasesInput[]
+  connectOrCreate?: Prisma.AppCreateOrConnectWithoutDatabasesInput | Prisma.AppCreateOrConnectWithoutDatabasesInput[]
+  connect?: Prisma.AppWhereUniqueInput | Prisma.AppWhereUniqueInput[]
+}
+
+export type AppUncheckedCreateNestedManyWithoutDatabasesInput = {
+  create?: Prisma.XOR<Prisma.AppCreateWithoutDatabasesInput, Prisma.AppUncheckedCreateWithoutDatabasesInput> | Prisma.AppCreateWithoutDatabasesInput[] | Prisma.AppUncheckedCreateWithoutDatabasesInput[]
+  connectOrCreate?: Prisma.AppCreateOrConnectWithoutDatabasesInput | Prisma.AppCreateOrConnectWithoutDatabasesInput[]
+  connect?: Prisma.AppWhereUniqueInput | Prisma.AppWhereUniqueInput[]
+}
+
+export type AppUpdateManyWithoutDatabasesNestedInput = {
+  create?: Prisma.XOR<Prisma.AppCreateWithoutDatabasesInput, Prisma.AppUncheckedCreateWithoutDatabasesInput> | Prisma.AppCreateWithoutDatabasesInput[] | Prisma.AppUncheckedCreateWithoutDatabasesInput[]
+  connectOrCreate?: Prisma.AppCreateOrConnectWithoutDatabasesInput | Prisma.AppCreateOrConnectWithoutDatabasesInput[]
+  upsert?: Prisma.AppUpsertWithWhereUniqueWithoutDatabasesInput | Prisma.AppUpsertWithWhereUniqueWithoutDatabasesInput[]
+  set?: Prisma.AppWhereUniqueInput | Prisma.AppWhereUniqueInput[]
+  disconnect?: Prisma.AppWhereUniqueInput | Prisma.AppWhereUniqueInput[]
+  delete?: Prisma.AppWhereUniqueInput | Prisma.AppWhereUniqueInput[]
+  connect?: Prisma.AppWhereUniqueInput | Prisma.AppWhereUniqueInput[]
+  update?: Prisma.AppUpdateWithWhereUniqueWithoutDatabasesInput | Prisma.AppUpdateWithWhereUniqueWithoutDatabasesInput[]
+  updateMany?: Prisma.AppUpdateManyWithWhereWithoutDatabasesInput | Prisma.AppUpdateManyWithWhereWithoutDatabasesInput[]
+  deleteMany?: Prisma.AppScalarWhereInput | Prisma.AppScalarWhereInput[]
+}
+
+export type AppUncheckedUpdateManyWithoutDatabasesNestedInput = {
+  create?: Prisma.XOR<Prisma.AppCreateWithoutDatabasesInput, Prisma.AppUncheckedCreateWithoutDatabasesInput> | Prisma.AppCreateWithoutDatabasesInput[] | Prisma.AppUncheckedCreateWithoutDatabasesInput[]
+  connectOrCreate?: Prisma.AppCreateOrConnectWithoutDatabasesInput | Prisma.AppCreateOrConnectWithoutDatabasesInput[]
+  upsert?: Prisma.AppUpsertWithWhereUniqueWithoutDatabasesInput | Prisma.AppUpsertWithWhereUniqueWithoutDatabasesInput[]
+  set?: Prisma.AppWhereUniqueInput | Prisma.AppWhereUniqueInput[]
+  disconnect?: Prisma.AppWhereUniqueInput | Prisma.AppWhereUniqueInput[]
+  delete?: Prisma.AppWhereUniqueInput | Prisma.AppWhereUniqueInput[]
+  connect?: Prisma.AppWhereUniqueInput | Prisma.AppWhereUniqueInput[]
+  update?: Prisma.AppUpdateWithWhereUniqueWithoutDatabasesInput | Prisma.AppUpdateWithWhereUniqueWithoutDatabasesInput[]
+  updateMany?: Prisma.AppUpdateManyWithWhereWithoutDatabasesInput | Prisma.AppUpdateManyWithWhereWithoutDatabasesInput[]
+  deleteMany?: Prisma.AppScalarWhereInput | Prisma.AppScalarWhereInput[]
+}
+
 export type AppCreateWithoutUserInput = {
   id?: string
   name: string
@@ -624,6 +669,7 @@ export type AppCreateWithoutUserInput = {
   envVars?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   deploys?: Prisma.DeployCreateNestedManyWithoutAppInput
   container?: Prisma.ContainerCreateNestedOneWithoutAppInput
+  databases?: Prisma.DatabaseCreateNestedManyWithoutAppsInput
 }
 
 export type AppUncheckedCreateWithoutUserInput = {
@@ -640,6 +686,7 @@ export type AppUncheckedCreateWithoutUserInput = {
   envVars?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   deploys?: Prisma.DeployUncheckedCreateNestedManyWithoutAppInput
   container?: Prisma.ContainerUncheckedCreateNestedOneWithoutAppInput
+  databases?: Prisma.DatabaseUncheckedCreateNestedManyWithoutAppsInput
 }
 
 export type AppCreateOrConnectWithoutUserInput = {
@@ -700,6 +747,7 @@ export type AppCreateWithoutDeploysInput = {
   envVars?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   user: Prisma.UserCreateNestedOneWithoutAppsInput
   container?: Prisma.ContainerCreateNestedOneWithoutAppInput
+  databases?: Prisma.DatabaseCreateNestedManyWithoutAppsInput
 }
 
 export type AppUncheckedCreateWithoutDeploysInput = {
@@ -716,6 +764,7 @@ export type AppUncheckedCreateWithoutDeploysInput = {
   rootDir?: string
   envVars?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   container?: Prisma.ContainerUncheckedCreateNestedOneWithoutAppInput
+  databases?: Prisma.DatabaseUncheckedCreateNestedManyWithoutAppsInput
 }
 
 export type AppCreateOrConnectWithoutDeploysInput = {
@@ -748,6 +797,7 @@ export type AppUpdateWithoutDeploysInput = {
   envVars?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   user?: Prisma.UserUpdateOneRequiredWithoutAppsNestedInput
   container?: Prisma.ContainerUpdateOneWithoutAppNestedInput
+  databases?: Prisma.DatabaseUpdateManyWithoutAppsNestedInput
 }
 
 export type AppUncheckedUpdateWithoutDeploysInput = {
@@ -764,6 +814,7 @@ export type AppUncheckedUpdateWithoutDeploysInput = {
   rootDir?: Prisma.StringFieldUpdateOperationsInput | string
   envVars?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   container?: Prisma.ContainerUncheckedUpdateOneWithoutAppNestedInput
+  databases?: Prisma.DatabaseUncheckedUpdateManyWithoutAppsNestedInput
 }
 
 export type AppCreateWithoutContainerInput = {
@@ -780,6 +831,7 @@ export type AppCreateWithoutContainerInput = {
   envVars?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   user: Prisma.UserCreateNestedOneWithoutAppsInput
   deploys?: Prisma.DeployCreateNestedManyWithoutAppInput
+  databases?: Prisma.DatabaseCreateNestedManyWithoutAppsInput
 }
 
 export type AppUncheckedCreateWithoutContainerInput = {
@@ -796,6 +848,7 @@ export type AppUncheckedCreateWithoutContainerInput = {
   rootDir?: string
   envVars?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   deploys?: Prisma.DeployUncheckedCreateNestedManyWithoutAppInput
+  databases?: Prisma.DatabaseUncheckedCreateNestedManyWithoutAppsInput
 }
 
 export type AppCreateOrConnectWithoutContainerInput = {
@@ -828,6 +881,7 @@ export type AppUpdateWithoutContainerInput = {
   envVars?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   user?: Prisma.UserUpdateOneRequiredWithoutAppsNestedInput
   deploys?: Prisma.DeployUpdateManyWithoutAppNestedInput
+  databases?: Prisma.DatabaseUpdateManyWithoutAppsNestedInput
 }
 
 export type AppUncheckedUpdateWithoutContainerInput = {
@@ -844,6 +898,62 @@ export type AppUncheckedUpdateWithoutContainerInput = {
   rootDir?: Prisma.StringFieldUpdateOperationsInput | string
   envVars?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   deploys?: Prisma.DeployUncheckedUpdateManyWithoutAppNestedInput
+  databases?: Prisma.DatabaseUncheckedUpdateManyWithoutAppsNestedInput
+}
+
+export type AppCreateWithoutDatabasesInput = {
+  id?: string
+  name: string
+  repoUrl: string
+  domain?: string | null
+  runtime?: string | null
+  port?: number | null
+  status?: $Enums.AppStatus
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  rootDir?: string
+  envVars?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  user: Prisma.UserCreateNestedOneWithoutAppsInput
+  deploys?: Prisma.DeployCreateNestedManyWithoutAppInput
+  container?: Prisma.ContainerCreateNestedOneWithoutAppInput
+}
+
+export type AppUncheckedCreateWithoutDatabasesInput = {
+  id?: string
+  name: string
+  repoUrl: string
+  domain?: string | null
+  runtime?: string | null
+  port?: number | null
+  status?: $Enums.AppStatus
+  userId: string
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  rootDir?: string
+  envVars?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  deploys?: Prisma.DeployUncheckedCreateNestedManyWithoutAppInput
+  container?: Prisma.ContainerUncheckedCreateNestedOneWithoutAppInput
+}
+
+export type AppCreateOrConnectWithoutDatabasesInput = {
+  where: Prisma.AppWhereUniqueInput
+  create: Prisma.XOR<Prisma.AppCreateWithoutDatabasesInput, Prisma.AppUncheckedCreateWithoutDatabasesInput>
+}
+
+export type AppUpsertWithWhereUniqueWithoutDatabasesInput = {
+  where: Prisma.AppWhereUniqueInput
+  update: Prisma.XOR<Prisma.AppUpdateWithoutDatabasesInput, Prisma.AppUncheckedUpdateWithoutDatabasesInput>
+  create: Prisma.XOR<Prisma.AppCreateWithoutDatabasesInput, Prisma.AppUncheckedCreateWithoutDatabasesInput>
+}
+
+export type AppUpdateWithWhereUniqueWithoutDatabasesInput = {
+  where: Prisma.AppWhereUniqueInput
+  data: Prisma.XOR<Prisma.AppUpdateWithoutDatabasesInput, Prisma.AppUncheckedUpdateWithoutDatabasesInput>
+}
+
+export type AppUpdateManyWithWhereWithoutDatabasesInput = {
+  where: Prisma.AppScalarWhereInput
+  data: Prisma.XOR<Prisma.AppUpdateManyMutationInput, Prisma.AppUncheckedUpdateManyWithoutDatabasesInput>
 }
 
 export type AppCreateManyUserInput = {
@@ -874,6 +984,7 @@ export type AppUpdateWithoutUserInput = {
   envVars?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   deploys?: Prisma.DeployUpdateManyWithoutAppNestedInput
   container?: Prisma.ContainerUpdateOneWithoutAppNestedInput
+  databases?: Prisma.DatabaseUpdateManyWithoutAppsNestedInput
 }
 
 export type AppUncheckedUpdateWithoutUserInput = {
@@ -890,6 +1001,7 @@ export type AppUncheckedUpdateWithoutUserInput = {
   envVars?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   deploys?: Prisma.DeployUncheckedUpdateManyWithoutAppNestedInput
   container?: Prisma.ContainerUncheckedUpdateOneWithoutAppNestedInput
+  databases?: Prisma.DatabaseUncheckedUpdateManyWithoutAppsNestedInput
 }
 
 export type AppUncheckedUpdateManyWithoutUserInput = {
@@ -906,6 +1018,55 @@ export type AppUncheckedUpdateManyWithoutUserInput = {
   envVars?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
 }
 
+export type AppUpdateWithoutDatabasesInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  repoUrl?: Prisma.StringFieldUpdateOperationsInput | string
+  domain?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  runtime?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  port?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  status?: Prisma.EnumAppStatusFieldUpdateOperationsInput | $Enums.AppStatus
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  rootDir?: Prisma.StringFieldUpdateOperationsInput | string
+  envVars?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  user?: Prisma.UserUpdateOneRequiredWithoutAppsNestedInput
+  deploys?: Prisma.DeployUpdateManyWithoutAppNestedInput
+  container?: Prisma.ContainerUpdateOneWithoutAppNestedInput
+}
+
+export type AppUncheckedUpdateWithoutDatabasesInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  repoUrl?: Prisma.StringFieldUpdateOperationsInput | string
+  domain?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  runtime?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  port?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  status?: Prisma.EnumAppStatusFieldUpdateOperationsInput | $Enums.AppStatus
+  userId?: Prisma.StringFieldUpdateOperationsInput | string
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  rootDir?: Prisma.StringFieldUpdateOperationsInput | string
+  envVars?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  deploys?: Prisma.DeployUncheckedUpdateManyWithoutAppNestedInput
+  container?: Prisma.ContainerUncheckedUpdateOneWithoutAppNestedInput
+}
+
+export type AppUncheckedUpdateManyWithoutDatabasesInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  repoUrl?: Prisma.StringFieldUpdateOperationsInput | string
+  domain?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  runtime?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  port?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  status?: Prisma.EnumAppStatusFieldUpdateOperationsInput | $Enums.AppStatus
+  userId?: Prisma.StringFieldUpdateOperationsInput | string
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  rootDir?: Prisma.StringFieldUpdateOperationsInput | string
+  envVars?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+}
+
 
 /**
  * Count Type AppCountOutputType
@@ -913,10 +1074,12 @@ export type AppUncheckedUpdateManyWithoutUserInput = {
 
 export type AppCountOutputType = {
   deploys: number
+  databases: number
 }
 
 export type AppCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   deploys?: boolean | AppCountOutputTypeCountDeploysArgs
+  databases?: boolean | AppCountOutputTypeCountDatabasesArgs
 }
 
 /**
@@ -936,6 +1099,13 @@ export type AppCountOutputTypeCountDeploysArgs<ExtArgs extends runtime.Types.Ext
   where?: Prisma.DeployWhereInput
 }
 
+/**
+ * AppCountOutputType without action
+ */
+export type AppCountOutputTypeCountDatabasesArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.DatabaseWhereInput
+}
+
 
 export type AppSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
@@ -953,6 +1123,7 @@ export type AppSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = ru
   user?: boolean | Prisma.UserDefaultArgs<ExtArgs>
   deploys?: boolean | Prisma.App$deploysArgs<ExtArgs>
   container?: boolean | Prisma.App$containerArgs<ExtArgs>
+  databases?: boolean | Prisma.App$databasesArgs<ExtArgs>
   _count?: boolean | Prisma.AppCountOutputTypeDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["app"]>
 
@@ -1008,6 +1179,7 @@ export type AppInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = r
   user?: boolean | Prisma.UserDefaultArgs<ExtArgs>
   deploys?: boolean | Prisma.App$deploysArgs<ExtArgs>
   container?: boolean | Prisma.App$containerArgs<ExtArgs>
+  databases?: boolean | Prisma.App$databasesArgs<ExtArgs>
   _count?: boolean | Prisma.AppCountOutputTypeDefaultArgs<ExtArgs>
 }
 export type AppIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
@@ -1023,6 +1195,7 @@ export type $AppPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs = 
     user: Prisma.$UserPayload<ExtArgs>
     deploys: Prisma.$DeployPayload<ExtArgs>[]
     container: Prisma.$ContainerPayload<ExtArgs> | null
+    databases: Prisma.$DatabasePayload<ExtArgs>[]
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: string
@@ -1434,6 +1607,7 @@ export interface Prisma__AppClient<T, Null = never, ExtArgs extends runtime.Type
   user<T extends Prisma.UserDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.UserDefaultArgs<ExtArgs>>): Prisma.Prisma__UserClient<runtime.Types.Result.GetResult<Prisma.$UserPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
   deploys<T extends Prisma.App$deploysArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.App$deploysArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$DeployPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   container<T extends Prisma.App$containerArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.App$containerArgs<ExtArgs>>): Prisma.Prisma__ContainerClient<runtime.Types.Result.GetResult<Prisma.$ContainerPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+  databases<T extends Prisma.App$databasesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.App$databasesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$DatabasePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
    * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -1911,6 +2085,30 @@ export type App$containerArgs<ExtArgs extends runtime.Types.Extensions.InternalA
    */
   include?: Prisma.ContainerInclude<ExtArgs> | null
   where?: Prisma.ContainerWhereInput
+}
+
+/**
+ * App.databases
+ */
+export type App$databasesArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the Database
+   */
+  select?: Prisma.DatabaseSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the Database
+   */
+  omit?: Prisma.DatabaseOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.DatabaseInclude<ExtArgs> | null
+  where?: Prisma.DatabaseWhereInput
+  orderBy?: Prisma.DatabaseOrderByWithRelationInput | Prisma.DatabaseOrderByWithRelationInput[]
+  cursor?: Prisma.DatabaseWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.DatabaseScalarFieldEnum | Prisma.DatabaseScalarFieldEnum[]
 }
 
 /**

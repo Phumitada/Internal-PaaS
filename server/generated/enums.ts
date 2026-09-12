@@ -46,3 +46,20 @@ export const ContainerStatus = {
 } as const
 
 export type ContainerStatus = (typeof ContainerStatus)[keyof typeof ContainerStatus]
+
+
+export const DatabaseEngine = {
+  POSTGRES: 'POSTGRES',
+  REDIS: 'REDIS'
+} as const
+
+export type DatabaseEngine = (typeof DatabaseEngine)[keyof typeof DatabaseEngine]
+
+
+export const DatabaseStatus = {
+  PENDING: 'PENDING',
+  RUNNING: 'RUNNING',
+  ERROR: 'ERROR'
+} as const
+
+export type DatabaseStatus = (typeof DatabaseStatus)[keyof typeof DatabaseStatus]

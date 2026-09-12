@@ -2,6 +2,7 @@ import { useState } from "react"
 import { Search, Trash2, RefreshCw } from "lucide-react"
 import { useGetAllApps } from "@/hooks/useApp"
 import { useDeleteApp } from "@/hooks/useApp"
+import { useAppStatus } from "@/hooks/useAppStatus"
 
 const STATUS_DOT: Record<string, string> = {
   RUNNING:  "bg-emerald-500",
@@ -46,8 +47,17 @@ export default function AdminDashboard() {
     ? data.data
     : []
 
-  const running = apps.filter((a) => a.status === "RUNNING").length
-  const errors  = apps.filter((a) => a.status === "ERROR").length
+  const appIds = apps.map(app => app.id)
+  const getAppStatus = useAppStatus(appIds)
+
+  // Merge socket status with API data
+  const appsWithStatus = apps.map((app) => ({
+    ...app,
+    status: getAppStatus(app.id) || app.status
+  }))
+
+  const running = appsWithStatus.filter((a) => a.status === "RUNNING").length
+  const errors  = appsWithStatus.filter((a) => a.status === "ERROR").length
 
   return (
     <div className="px-6 py-8">
@@ -117,10 +127,10 @@ export default function AdminDashboard() {
               <div className="col-span-3">Repository</div>
               <div className="col-span-1" />
             </div>
-            {apps.map((app, i) => {
+            {appsWithStatus.map((app, i) => {
               const status = app.status?.toUpperCase() || "IDLE"
               return (
-                <div key={app.id} className={`grid grid-cols-12 gap-4 px-4 py-3 items-center ${i < apps.length - 1 ? "border-b border-zinc-100" : ""}`}>
+                <div key={app.id} className={`grid grid-cols-12 gap-4 px-4 py-3 items-center ${i < appsWithStatus.length - 1 ? "border-b border-zinc-100" : ""}`}>
                   <div className="col-span-3">
                     <span className="text-sm font-mono font-medium text-zinc-900">{app.name}</span>
                   </div>

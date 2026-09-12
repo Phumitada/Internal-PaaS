@@ -5,7 +5,7 @@ export interface CreateAppPayload {
 }
 
 export interface QueryApp {
-    userId: string
+    userId?: string
     status?: string | string[];
     page?: number;
     limit?: number;

@@ -207,6 +207,7 @@ export type UserWhereInput = {
   createdAt?: Prisma.DateTimeFilter<"User"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"User"> | Date | string
   apps?: Prisma.AppListRelationFilter
+  database?: Prisma.DatabaseListRelationFilter
 }
 
 export type UserOrderByWithRelationInput = {
@@ -219,6 +220,7 @@ export type UserOrderByWithRelationInput = {
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
   apps?: Prisma.AppOrderByRelationAggregateInput
+  database?: Prisma.DatabaseOrderByRelationAggregateInput
 }
 
 export type UserWhereUniqueInput = Prisma.AtLeast<{
@@ -234,6 +236,7 @@ export type UserWhereUniqueInput = Prisma.AtLeast<{
   createdAt?: Prisma.DateTimeFilter<"User"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"User"> | Date | string
   apps?: Prisma.AppListRelationFilter
+  database?: Prisma.DatabaseListRelationFilter
 }, "id" | "email">
 
 export type UserOrderByWithAggregationInput = {
@@ -274,6 +277,7 @@ export type UserCreateInput = {
   createdAt?: Date | string
   updatedAt?: Date | string
   apps?: Prisma.AppCreateNestedManyWithoutUserInput
+  database?: Prisma.DatabaseCreateNestedManyWithoutUserInput
 }
 
 export type UserUncheckedCreateInput = {
@@ -286,6 +290,7 @@ export type UserUncheckedCreateInput = {
   createdAt?: Date | string
   updatedAt?: Date | string
   apps?: Prisma.AppUncheckedCreateNestedManyWithoutUserInput
+  database?: Prisma.DatabaseUncheckedCreateNestedManyWithoutUserInput
 }
 
 export type UserUpdateInput = {
@@ -298,6 +303,7 @@ export type UserUpdateInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   apps?: Prisma.AppUpdateManyWithoutUserNestedInput
+  database?: Prisma.DatabaseUpdateManyWithoutUserNestedInput
 }
 
 export type UserUncheckedUpdateInput = {
@@ -310,6 +316,7 @@ export type UserUncheckedUpdateInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   apps?: Prisma.AppUncheckedUpdateManyWithoutUserNestedInput
+  database?: Prisma.DatabaseUncheckedUpdateManyWithoutUserNestedInput
 }
 
 export type UserCreateManyInput = {
@@ -413,6 +420,20 @@ export type UserUpdateOneRequiredWithoutAppsNestedInput = {
   update?: Prisma.XOR<Prisma.XOR<Prisma.UserUpdateToOneWithWhereWithoutAppsInput, Prisma.UserUpdateWithoutAppsInput>, Prisma.UserUncheckedUpdateWithoutAppsInput>
 }
 
+export type UserCreateNestedOneWithoutDatabaseInput = {
+  create?: Prisma.XOR<Prisma.UserCreateWithoutDatabaseInput, Prisma.UserUncheckedCreateWithoutDatabaseInput>
+  connectOrCreate?: Prisma.UserCreateOrConnectWithoutDatabaseInput
+  connect?: Prisma.UserWhereUniqueInput
+}
+
+export type UserUpdateOneRequiredWithoutDatabaseNestedInput = {
+  create?: Prisma.XOR<Prisma.UserCreateWithoutDatabaseInput, Prisma.UserUncheckedCreateWithoutDatabaseInput>
+  connectOrCreate?: Prisma.UserCreateOrConnectWithoutDatabaseInput
+  upsert?: Prisma.UserUpsertWithoutDatabaseInput
+  connect?: Prisma.UserWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.UserUpdateToOneWithWhereWithoutDatabaseInput, Prisma.UserUpdateWithoutDatabaseInput>, Prisma.UserUncheckedUpdateWithoutDatabaseInput>
+}
+
 export type UserCreateWithoutAppsInput = {
   id?: string
   email: string
@@ -422,6 +443,7 @@ export type UserCreateWithoutAppsInput = {
   refreshToken?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
+  database?: Prisma.DatabaseCreateNestedManyWithoutUserInput
 }
 
 export type UserUncheckedCreateWithoutAppsInput = {
@@ -433,6 +455,7 @@ export type UserUncheckedCreateWithoutAppsInput = {
   refreshToken?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
+  database?: Prisma.DatabaseUncheckedCreateNestedManyWithoutUserInput
 }
 
 export type UserCreateOrConnectWithoutAppsInput = {
@@ -460,6 +483,7 @@ export type UserUpdateWithoutAppsInput = {
   refreshToken?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  database?: Prisma.DatabaseUpdateManyWithoutUserNestedInput
 }
 
 export type UserUncheckedUpdateWithoutAppsInput = {
@@ -471,6 +495,71 @@ export type UserUncheckedUpdateWithoutAppsInput = {
   refreshToken?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  database?: Prisma.DatabaseUncheckedUpdateManyWithoutUserNestedInput
+}
+
+export type UserCreateWithoutDatabaseInput = {
+  id?: string
+  email: string
+  password: string
+  name: string
+  role?: $Enums.Role
+  refreshToken?: string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  apps?: Prisma.AppCreateNestedManyWithoutUserInput
+}
+
+export type UserUncheckedCreateWithoutDatabaseInput = {
+  id?: string
+  email: string
+  password: string
+  name: string
+  role?: $Enums.Role
+  refreshToken?: string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  apps?: Prisma.AppUncheckedCreateNestedManyWithoutUserInput
+}
+
+export type UserCreateOrConnectWithoutDatabaseInput = {
+  where: Prisma.UserWhereUniqueInput
+  create: Prisma.XOR<Prisma.UserCreateWithoutDatabaseInput, Prisma.UserUncheckedCreateWithoutDatabaseInput>
+}
+
+export type UserUpsertWithoutDatabaseInput = {
+  update: Prisma.XOR<Prisma.UserUpdateWithoutDatabaseInput, Prisma.UserUncheckedUpdateWithoutDatabaseInput>
+  create: Prisma.XOR<Prisma.UserCreateWithoutDatabaseInput, Prisma.UserUncheckedCreateWithoutDatabaseInput>
+  where?: Prisma.UserWhereInput
+}
+
+export type UserUpdateToOneWithWhereWithoutDatabaseInput = {
+  where?: Prisma.UserWhereInput
+  data: Prisma.XOR<Prisma.UserUpdateWithoutDatabaseInput, Prisma.UserUncheckedUpdateWithoutDatabaseInput>
+}
+
+export type UserUpdateWithoutDatabaseInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  email?: Prisma.StringFieldUpdateOperationsInput | string
+  password?: Prisma.StringFieldUpdateOperationsInput | string
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  role?: Prisma.EnumRoleFieldUpdateOperationsInput | $Enums.Role
+  refreshToken?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  apps?: Prisma.AppUpdateManyWithoutUserNestedInput
+}
+
+export type UserUncheckedUpdateWithoutDatabaseInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  email?: Prisma.StringFieldUpdateOperationsInput | string
+  password?: Prisma.StringFieldUpdateOperationsInput | string
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  role?: Prisma.EnumRoleFieldUpdateOperationsInput | $Enums.Role
+  refreshToken?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  apps?: Prisma.AppUncheckedUpdateManyWithoutUserNestedInput
 }
 
 
@@ -480,10 +569,12 @@ export type UserUncheckedUpdateWithoutAppsInput = {
 
 export type UserCountOutputType = {
   apps: number
+  database: number
 }
 
 export type UserCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   apps?: boolean | UserCountOutputTypeCountAppsArgs
+  database?: boolean | UserCountOutputTypeCountDatabaseArgs
 }
 
 /**
@@ -503,6 +594,13 @@ export type UserCountOutputTypeCountAppsArgs<ExtArgs extends runtime.Types.Exten
   where?: Prisma.AppWhereInput
 }
 
+/**
+ * UserCountOutputType without action
+ */
+export type UserCountOutputTypeCountDatabaseArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.DatabaseWhereInput
+}
+
 
 export type UserSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
@@ -514,6 +612,7 @@ export type UserSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = r
   createdAt?: boolean
   updatedAt?: boolean
   apps?: boolean | Prisma.User$appsArgs<ExtArgs>
+  database?: boolean | Prisma.User$databaseArgs<ExtArgs>
   _count?: boolean | Prisma.UserCountOutputTypeDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["user"]>
 
@@ -553,6 +652,7 @@ export type UserSelectScalar = {
 export type UserOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "email" | "password" | "name" | "role" | "refreshToken" | "createdAt" | "updatedAt", ExtArgs["result"]["user"]>
 export type UserInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   apps?: boolean | Prisma.User$appsArgs<ExtArgs>
+  database?: boolean | Prisma.User$databaseArgs<ExtArgs>
   _count?: boolean | Prisma.UserCountOutputTypeDefaultArgs<ExtArgs>
 }
 export type UserIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {}
@@ -562,6 +662,7 @@ export type $UserPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs =
   name: "User"
   objects: {
     apps: Prisma.$AppPayload<ExtArgs>[]
+    database: Prisma.$DatabasePayload<ExtArgs>[]
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: string
@@ -967,6 +1068,7 @@ readonly fields: UserFieldRefs;
 export interface Prisma__UserClient<T, Null = never, ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
   readonly [Symbol.toStringTag]: "PrismaPromise"
   apps<T extends Prisma.User$appsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$appsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$AppPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  database<T extends Prisma.User$databaseArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$databaseArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$DatabasePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
    * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -1413,6 +1515,30 @@ export type User$appsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs 
   take?: number
   skip?: number
   distinct?: Prisma.AppScalarFieldEnum | Prisma.AppScalarFieldEnum[]
+}
+
+/**
+ * User.database
+ */
+export type User$databaseArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the Database
+   */
+  select?: Prisma.DatabaseSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the Database
+   */
+  omit?: Prisma.DatabaseOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.DatabaseInclude<ExtArgs> | null
+  where?: Prisma.DatabaseWhereInput
+  orderBy?: Prisma.DatabaseOrderByWithRelationInput | Prisma.DatabaseOrderByWithRelationInput[]
+  cursor?: Prisma.DatabaseWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.DatabaseScalarFieldEnum | Prisma.DatabaseScalarFieldEnum[]
 }
 
 /**

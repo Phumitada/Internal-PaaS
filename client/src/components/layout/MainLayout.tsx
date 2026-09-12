@@ -1,11 +1,12 @@
 import { NavLink, Outlet, useNavigate } from "react-router-dom"
 import { useState, useRef, useEffect } from "react"
-import { LayoutDashboard, Server, BookOpen, Settings, Shield, ChevronDown, LogOut, User } from "lucide-react"
+import { LayoutDashboard, Server, BookOpen, Settings, Shield, ChevronDown, LogOut, User, Database } from "lucide-react"
 import { useAuth } from "@/hooks/useAuth"
 
 const NAV_ITEMS = [
   { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { to: "/services",  label: "Services",  icon: Server },
+  { to: "/databases", label: "Databases", icon: Database },
   { to: "/tutorial",  label: "Tutorial",  icon: BookOpen },
   { to: "/settings",  label: "Settings",  icon: Settings },
 ]

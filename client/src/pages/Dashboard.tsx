@@ -2,6 +2,7 @@ import { Link } from "react-router-dom"
 import { Plus, RefreshCw, ExternalLink } from "lucide-react"
 import { useAuth } from "@/hooks/useAuth"
 import { useGetApps } from "@/hooks/useApp"
+import { useAppStatus } from "@/hooks/useAppStatus"
 
 const STATUS_DOT: Record<string, string> = {
   RUNNING:  "bg-emerald-500",
@@ -29,9 +30,18 @@ export default function Dashboard() {
     ? data.data
     : []
 
-  const running  = apps.filter((a) => a.status === "RUNNING").length
-  const building = apps.filter((a) => a.status === "BUILDING").length
-  const stopped  = apps.filter((a) => ["STOPPED", "IDLE", "ERROR"].includes(a.status)).length
+  const appIds = apps.map(app => app.id)
+  const getAppStatus = useAppStatus(appIds)
+
+  // Merge socket status with API data
+  const appsWithStatus = apps.map((app) => ({
+    ...app,
+    status: getAppStatus(app.id) || app.status
+  }))
+
+  const running  = appsWithStatus.filter((a) => a.status === "RUNNING").length
+  const building = appsWithStatus.filter((a) => a.status === "BUILDING").length
+  const stopped  = appsWithStatus.filter((a) => ["STOPPED", "IDLE", "ERROR"].includes(a.status)).length
 
   return (
     <div className="px-6 py-8 space-y-10">
@@ -107,14 +117,14 @@ export default function Dashboard() {
           </div>
         ) : (
           <div className="border border-zinc-200 rounded-lg overflow-hidden">
-            {apps.map((app, i) => {
+            {appsWithStatus.map((app, i) => {
               const status = app.status?.toUpperCase() || "IDLE"
               return (
                 <Link
                   key={app.id}
                   to={`/services/${app.id}`}
                   className={`flex items-center gap-4 px-4 py-3 hover:bg-zinc-50 transition-colors group ${
-                    i < apps.length - 1 ? "border-b border-zinc-100" : ""
+                    i < appsWithStatus.length - 1 ? "border-b border-zinc-100" : ""
                   }`}
                 >
                   <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${STATUS_DOT[status] ?? "bg-zinc-300"}`} />

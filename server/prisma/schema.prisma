@@ -23,6 +23,7 @@ model User {
   createdAt    DateTime  @default(now())
   updatedAt    DateTime  @updatedAt
   apps         App[]   
+  database     Database[]
 
   @@map("users")
 }
@@ -43,6 +44,7 @@ model App {
   container Container?
   rootDir   String @default(".")
   envVars   Json?
+  databases Database[] @relation("AppDatabases")
 
   @@map("apps")
 }
@@ -80,6 +82,20 @@ model Container {
   @@map("containers")
 }
 
+model Database {
+  id        String         @id @default(cuid())
+  name      String         @unique
+  engine    DatabaseEngine
+  storage   String         @default("1Gi")
+  status    DatabaseStatus @default(PENDING)
+  userId    String
+  user      User           @relation(fields: [userId], references: [id])
+  apps      App[]          @relation("AppDatabases")
+  createdAt DateTime       @default(now())
+  updatedAt DateTime       @updatedAt
+  @@map("databases")
+}
+
 enum Role {
   USER
   ADMIN
@@ -107,3 +123,13 @@ enum ContainerStatus {
   REMOVED
 }
 
+enum DatabaseEngine {
+  POSTGRES
+  REDIS
+}
+
+enum DatabaseStatus {
+  PENDING
+  RUNNING
+  ERROR
+}

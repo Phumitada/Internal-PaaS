@@ -54,7 +54,8 @@ export const ModelName = {
   User: 'User',
   App: 'App',
   Deploy: 'Deploy',
-  Container: 'Container'
+  Container: 'Container',
+  Database: 'Database'
 } as const
 
 export type ModelName = (typeof ModelName)[keyof typeof ModelName]
@@ -134,6 +135,20 @@ export const ContainerScalarFieldEnum = {
 } as const
 
 export type ContainerScalarFieldEnum = (typeof ContainerScalarFieldEnum)[keyof typeof ContainerScalarFieldEnum]
+
+
+export const DatabaseScalarFieldEnum = {
+  id: 'id',
+  name: 'name',
+  engine: 'engine',
+  storage: 'storage',
+  status: 'status',
+  userId: 'userId',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type DatabaseScalarFieldEnum = (typeof DatabaseScalarFieldEnum)[keyof typeof DatabaseScalarFieldEnum]
 
 
 export const SortOrder = {

@@ -1,13 +1,8 @@
 import { prisma } from '../db/prisma'
 import type { AdminQueryApp, CreateAppPayload, QueryApp, UpdateAppPayload } from '../types/app.type'
 import { buildQueue } from '../queues/build.queue'
+import { assertOwnership } from '../lib/assertOwnership'
 export type UpdateAppEnvPayload = Record<string, string>
-
-function assertOwnership(app: any, userId: string, role?: string) {
-  if (app.userId !== userId && role !== 'ADMIN') {
-    throw new Error('Forbidden')
-  }
-}
 
 export const appService = {
     createApp: async (payload:CreateAppPayload ) => {

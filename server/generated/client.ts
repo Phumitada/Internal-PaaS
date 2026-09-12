@@ -59,3 +59,8 @@ export type Deploy = Prisma.DeployModel
  * 
  */
 export type Container = Prisma.ContainerModel
+/**
+ * Model Database
+ * 
+ */
+export type Database = Prisma.DatabaseModel
