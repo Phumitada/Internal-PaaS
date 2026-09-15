@@ -211,7 +211,7 @@ const worker = new Worker('build', async (job: Job<BuildJobData>) => {
     })
     await prisma.app.update({
       where: { id: appId },
-      data: { status: 'RUNNING', port }
+      data: { status: 'RUNNING', port,ghcrUrl: imageTag }
     })
     
     await prisma.deploy.update({

@@ -32,6 +32,7 @@ model App {
   id        String     @id @default(cuid())
   name      String     @unique
   repoUrl   String
+  ghcrUrl   String?
   domain    String?
   runtime   String?
   port      Int?
