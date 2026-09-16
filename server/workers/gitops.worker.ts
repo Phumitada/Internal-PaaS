@@ -1,12 +1,18 @@
 import simpleGit from 'simple-git'
+import * as k8s from '@kubernetes/client-node'
 import { Worker, Job, } from 'bullmq'
 import fs from 'fs'
 import path from 'path'
 import { prisma } from '../db/prisma'
-import { generateApplicationYaml } from '../lib/generateApplicationYaml'
+import { generateApplicationYaml, getEnvSecretName } from '../lib/generateApplicationYaml'
 import { generateDatabaseYaml } from '../lib/generateDatabaseYaml'
 import { createDeployLogger } from '../lib/logger'
 import type { GitOpsJobData as Input } from '../lib/gitopsJob'
+
+const kc = new k8s.KubeConfig()
+kc.loadFromCluster()
+const k8sCoreApi = kc.makeApiClient(k8s.CoreV1Api)
+
 
 const connection = {
   host: process.env.REDIS_HOST || 'localhost',
@@ -18,6 +24,16 @@ function getManifestPath(clonePath: string, kind: 'app' | 'database', name: stri
   const folder = kind === 'app' ? 'app' : 'database'
   const filename = kind === 'app' ? 'application.yaml' : 'database.yaml'
   return path.join(clonePath, folder, name, filename)
+}
+
+async function secretExists(namespace: string, name: string): Promise<boolean> {
+  try {
+    await k8sCoreApi.readNamespacedSecret({ name, namespace })
+    return true
+  } catch (err: any) {
+    if (err.code === 404) return false
+    throw err
+  }
 }
 
 async function commitAndPush(
@@ -39,10 +55,8 @@ async function commitAndPush(
 
 const gitOpsWorker = new Worker('gitops', async (job: Job<Input>) => {
     const log = createDeployLogger(job.data.deployId)
-    // Must be absolute: simple-git runs `git` with cwd set to clonePath, so a
-    // relative GITOPS_CLONE_PATH would make paths built from it (fullPath below)
-    // resolve against the wrong base and break `git add`.
     const clonePath = path.resolve(process.env.GITOPS_CLONE_PATH || path.join(process.cwd(), '.gitops-clone'))
+    const K8S_NAMESPACE = process.env.K8S_APP_NAMESPACE || 'default'
     let git: ReturnType<typeof simpleGit>
     try {
         log('Step 8/8 · Sync GitOps repository')
@@ -57,7 +71,6 @@ const gitOpsWorker = new Worker('gitops', async (job: Job<Input>) => {
             git = simpleGit(clonePath)
             log('Cloned GitOps repository', 'success')
         }
-
         if(job.data.action === 'sync'){
             if(job.data.kind === 'app'){
                 const dataQuery = await prisma.app.findUnique({
@@ -71,12 +84,32 @@ const gitOpsWorker = new Worker('gitops', async (job: Job<Input>) => {
                 if(!dataQuery){
                     throw new Error("No app found")
                 }
+                const secretName = getEnvSecretName(dataQuery.name)
+                const secretExist = await secretExists(K8S_NAMESPACE,secretName)
+                if(secretExist){
+                    await k8sCoreApi.replaceNamespacedSecret({
+                        name: `${secretName}`,
+                        namespace: `${K8S_NAMESPACE}`,
+                        body: {
+                            metadata: { name: `${secretName}`},
+                            stringData: (dataQuery.envVars as Record<string, string>) ?? {}
+                        }
+                    })
+                }else{
+                    await k8sCoreApi.createNamespacedSecret({
+                        namespace: `${K8S_NAMESPACE}`,
+                        body: {
+                            metadata: {name: `${secretName}`},
+                            stringData: (dataQuery.envVars as Record<string, string>) ?? {}
+                        }
+                    })
+                }
                 const yaml = generateApplicationYaml(dataQuery)
-                const fullPath = getManifestPath(clonePath,job.data.kind,job.data.name)
+                const fullPath = getManifestPath(clonePath,job.data.kind,dataQuery.name)
                 fs.mkdirSync(path.dirname(fullPath), { recursive: true })
                 fs.writeFileSync(fullPath, yaml, 'utf-8')
-                log(`Wrote manifest for app ${job.data.name}`, 'success')
-                await commitAndPush(git, fullPath, `sync ${job.data.kind} ${job.data.name}`, log)
+                log(`Wrote manifest for app ${dataQuery.name}`, 'success')
+                await commitAndPush(git, fullPath, `sync ${job.data.kind} ${dataQuery.name}`, log)
 
             } else if(job.data.kind === 'database'){
                 const dataQuery = await prisma.database.findUnique({
@@ -88,11 +121,11 @@ const gitOpsWorker = new Worker('gitops', async (job: Job<Input>) => {
                     throw new Error("No database found")
                 }
                 const yaml = generateDatabaseYaml(dataQuery)
-                const fullPath = getManifestPath(clonePath,job.data.kind,job.data.name)
+                const fullPath = getManifestPath(clonePath,job.data.kind,dataQuery.name)
                 fs.mkdirSync(path.dirname(fullPath), { recursive: true })
                 fs.writeFileSync(fullPath, yaml, 'utf-8')
-                log(`Wrote manifest for database ${job.data.name}`, 'success')
-                await commitAndPush(git, fullPath, `sync ${job.data.kind} ${job.data.name}`, log)
+                log(`Wrote manifest for database ${dataQuery.name}`, 'success')
+                await commitAndPush(git, fullPath, `sync ${job.data.kind} ${dataQuery.name}`, log)
             }
         }else if(job.data.action === 'delete'){
             if(job.data.kind === 'app' || job.data.kind === 'database'){
