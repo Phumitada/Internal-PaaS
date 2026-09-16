@@ -1,0 +1,107 @@
+# buildkitd — in-cluster BuildKit daemon that build.worker.ts talks to via
+# `buildctl` (see server/lib/buildkit.ts). Deployment+Service, not a
+# per-build ephemeral Pod/Job, specifically so idp-api's ServiceAccount
+# never needs RBAC to create Pods/Jobs — it only needs ordinary in-namespace
+# Service access, which every pod already has.
+#
+# mTLS is required (BuildKit's own docs: plain TCP without it lets the
+# build executor call back into the API). The daemon cert lives in the
+# `buildkit-daemon-certs` Secret (ca.pem/cert.pem/key.pem, mounted as a
+# volume — this Deployment isn't controller-owned, so a normal volume mount
+# works). The matching client cert is delivered to idp-api a different way:
+# as BUILDKIT_CLIENT_CA/CERT/KEY in idp-api's own env vars (idp-api-env-secret),
+# because idp-api's Deployment IS controller-owned (generated from the
+# Application CRD by idp-controller), and that CRD only supports
+# envSecretRefs, not arbitrary extra volumes — envFrom was the only
+# available extension point without changing the operator itself.
+#
+# Regenerate certs with (openssl, not mkcert — same output shape):
+#   CN=buildkitd server cert, SAN: buildkitd, buildkitd.default,
+#   buildkitd.default.svc, buildkitd.default.svc.cluster.local, localhost, 127.0.0.1
+#   CN=client client cert, signed by the same CA
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: buildkitd
+  name: buildkitd
+  namespace: default
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: buildkitd
+  template:
+    metadata:
+      labels:
+        app: buildkitd
+    spec:
+      containers:
+        - name: buildkitd
+          image: moby/buildkit:rootless
+          args:
+            - --addr
+            - unix:///run/user/1000/buildkit/buildkitd.sock
+            - --addr
+            - tcp://0.0.0.0:1234
+            - --tlscacert
+            - /certs/ca.pem
+            - --tlscert
+            - /certs/cert.pem
+            - --tlskey
+            - /certs/key.pem
+            - --oci-worker-no-process-sandbox
+          readinessProbe:
+            exec:
+              command:
+                - buildctl
+                - debug
+                - workers
+            initialDelaySeconds: 5
+            periodSeconds: 30
+          livenessProbe:
+            exec:
+              command:
+                - buildctl
+                - debug
+                - workers
+            initialDelaySeconds: 5
+            periodSeconds: 30
+          securityContext:
+            seccompProfile:
+              type: Unconfined
+            # Without this, rootlesskit fails at startup with
+            # "failed to share mount point: /: permission denied" on any
+            # node with AppArmor enabled (Ubuntu defaults to this).
+            appArmorProfile:
+              type: Unconfined
+            runAsUser: 1000
+            runAsGroup: 1000
+          ports:
+            - containerPort: 1234
+          volumeMounts:
+            - name: certs
+              readOnly: true
+              mountPath: /certs
+            - mountPath: /home/user/.local/share/buildkit
+              name: buildkitd
+      volumes:
+        - name: certs
+          secret:
+            secretName: buildkit-daemon-certs
+        - name: buildkitd
+          emptyDir: {}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: buildkitd
+  name: buildkitd
+  namespace: default
+spec:
+  ports:
+    - port: 1234
+      protocol: TCP
+  selector:
+    app: buildkitd

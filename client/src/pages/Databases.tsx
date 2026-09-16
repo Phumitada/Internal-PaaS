@@ -1,9 +1,143 @@
-import { useState } from "react"
-import { Plus, Database, Trash2, Link as LinkIcon, Unlink } from "lucide-react"
+import { useEffect, useRef, useState } from "react"
+import { Link } from "react-router-dom"
+import { Plus, Database, Trash2, Link as LinkIcon, Unlink, Eye, EyeOff } from "lucide-react"
 import { useAuth } from "@/hooks/useAuth"
-import { useGetDatabases, useCreateDatabase, useDeleteDatabase, useConnectDatabase, useDisconnectDatabase } from "@/hooks/useDatabase"
+import { useGetDatabases, useCreateDatabase, useDeleteDatabase, useConnectDatabase, useDisconnectDatabase, useDatabaseCredentials } from "@/hooks/useDatabase"
 import { useGetApps } from "@/hooks/useApp"
 import { useDatabaseStatus } from "@/hooks/useDatabaseStatus"
+import { useSocket } from "@/hooks/useSocket"
+
+// Reuses the same log stream the build/deploy pipeline uses — database.id
+// is passed as the gitops job's deployId (see database.service.ts), so
+// `join`-ing it here works exactly the same way. Only shown while PENDING;
+// once the controller finishes provisioning, database:status flips this
+// away via getDbStatus.
+function ProvisioningLog({ databaseId }: { databaseId: string }) {
+  const { logs } = useSocket(databaseId)
+  const bottomRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    bottomRef.current?.scrollIntoView({ block: "end" })
+  }, [logs.length])
+
+  return (
+    <div className="mt-2">
+      <div className="text-xs font-medium text-zinc-500 mb-1 flex items-center gap-1.5">
+        <span className="w-1.5 h-1.5 rounded-full bg-yellow-400 animate-pulse" />
+        Provisioning...
+      </div>
+      <div className="bg-zinc-900 rounded p-3 max-h-40 overflow-y-auto font-mono text-xs space-y-0.5">
+        {logs.length === 0 ? (
+          <div className="text-zinc-500">Waiting for logs...</div>
+        ) : (
+          logs.map((line, i) => (
+            <div key={i} className="text-zinc-300 break-all">{line}</div>
+          ))
+        )}
+        <div ref={bottomRef} />
+      </div>
+    </div>
+  )
+}
+
+// URL and PASSWORD/SECRET values are sensitive (the URL embeds the
+// password too, e.g. postgresql://user:PASSWORD@host/db) — masked
+// individually, default hidden. Other fields (username, db name, port)
+// aren't secrets on their own, so they're shown directly once the panel
+// is revealed.
+const SENSITIVE_KEY = /URL|PASSWORD|SECRET/i
+
+function CredentialField({ label, value }: { label: string; value: string }) {
+  const [shown, setShown] = useState(false)
+  const sensitive = SENSITIVE_KEY.test(label)
+
+  return (
+    <div className="flex items-start gap-2">
+      <span className="text-zinc-500 shrink-0">{label}=</span>
+      <span className="break-all flex-1 text-zinc-300">
+        {sensitive && !shown ? "•".repeat(Math.min(value.length, 32)) : value}
+      </span>
+      {sensitive && (
+        <button
+          onClick={() => setShown((s) => !s)}
+          className="text-zinc-500 hover:text-zinc-300 transition-colors shrink-0"
+        >
+          {shown ? <EyeOff className="w-3 h-3" /> : <Eye className="w-3 h-3" />}
+        </button>
+      )}
+    </div>
+  )
+}
+
+function DatabaseCredentials({ databaseId, liveStatus, connectedApps }: { databaseId: string; liveStatus?: string; connectedApps: { id: string; name: string }[] }) {
+  const [revealed, setRevealed] = useState(false)
+  const { data, isLoading, refetch } = useDatabaseCredentials(databaseId, revealed)
+
+  // The gitops worker emits database:status -> RUNNING once the Secret is
+  // actually confirmed to exist (see useDatabaseStatus, same socket event
+  // the list's status dot already uses). Re-fetch when that happens instead
+  // of making the user refresh manually.
+  useEffect(() => {
+    if (revealed && liveStatus === "RUNNING" && data?.ready === false) {
+      refetch()
+    }
+  }, [liveStatus, revealed, data?.ready, refetch])
+
+  if (!revealed) {
+    return (
+      <button
+        onClick={() => setRevealed(true)}
+        className="flex items-center gap-1.5 text-xs text-zinc-500 hover:text-zinc-700 transition-colors mt-2"
+      >
+        <Eye className="w-3.5 h-3.5" /> Show credentials
+      </button>
+    )
+  }
+
+  return (
+    <div className="mt-2">
+      <button
+        onClick={() => setRevealed(false)}
+        className="flex items-center gap-1.5 text-xs text-zinc-500 hover:text-zinc-700 transition-colors mb-2"
+      >
+        <EyeOff className="w-3.5 h-3.5" /> Hide credentials
+      </button>
+      {isLoading ? (
+        <div className="text-xs text-zinc-400">Loading...</div>
+      ) : data?.ready ? (
+        <>
+          <div className="bg-zinc-900 rounded p-3 space-y-1.5 font-mono text-xs">
+            {Object.entries(data.data ?? {}).map(([key, value]) => (
+              <CredentialField key={key} label={key} value={value} />
+            ))}
+          </div>
+          <div className="mt-2 px-3 py-2 bg-yellow-50 border border-yellow-200 rounded text-xs text-yellow-800">
+            Creating this database doesn't update any app automatically — copy the values above into your
+            app's own environment variables, replacing any placeholder, before it'll actually connect.
+            {connectedApps.length > 0 && (
+              <div className="mt-1.5 flex flex-wrap gap-x-3 gap-y-1">
+                {connectedApps.map((app) => (
+                  <Link
+                    key={app.id}
+                    to={`/services/${app.id}?tab=variables`}
+                    className="underline hover:text-yellow-900"
+                  >
+                    Update {app.name}'s variables →
+                  </Link>
+                ))}
+              </div>
+            )}
+          </div>
+        </>
+      ) : (
+        <div className="text-xs text-yellow-600 flex items-center gap-1.5">
+          <span className="w-1.5 h-1.5 rounded-full bg-yellow-400 animate-pulse" />
+          Not ready yet — still provisioning, this updates automatically
+        </div>
+      )}
+    </div>
+  )
+}
 
 const STATUS_DOT: Record<string, string> = {
   RUNNING:  "bg-emerald-500",
@@ -169,6 +303,7 @@ export default function Databases() {
                   <div className="text-xs text-zinc-400 mt-0.5">
                     {db.engine} • {db.storage}
                   </div>
+                  {db.status === "PENDING" && <ProvisioningLog databaseId={db.id} />}
                 </div>
                 <div className="flex items-center gap-2">
                   <button
@@ -227,6 +362,12 @@ export default function Databases() {
                           <option key={app.id} value={app.id}>{app.name}</option>
                         ))}
                     </select>
+                  </div>
+
+                  {/* Credentials */}
+                  <div className="mt-3 pt-3 border-t border-zinc-200">
+                    <div className="text-xs font-medium text-zinc-500 mb-1">Connection credentials</div>
+                    <DatabaseCredentials databaseId={db.id} liveStatus={getDbStatus(db.id)} connectedApps={db.apps ?? []} />
                   </div>
                 </div>
               )}

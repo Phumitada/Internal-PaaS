@@ -1,5 +1,4 @@
 import simpleGit from 'simple-git'
-import * as k8s from '@kubernetes/client-node'
 import { Worker, Job, } from 'bullmq'
 import fs from 'fs'
 import path from 'path'
@@ -7,16 +6,15 @@ import { prisma } from '../db/prisma'
 import { generateApplicationYaml, getEnvSecretName } from '../lib/generateApplicationYaml'
 import { generateDatabaseYaml } from '../lib/generateDatabaseYaml'
 import { createDeployLogger } from '../lib/logger'
+import { emitDatabaseStatus } from '../lib/socket'
+import { k8sCoreApi } from '../lib/k8sClient'
 import type { GitOpsJobData as Input } from '../lib/gitopsJob'
-
-const kc = new k8s.KubeConfig()
-kc.loadFromCluster()
-const k8sCoreApi = kc.makeApiClient(k8s.CoreV1Api)
 
 
 const connection = {
   host: process.env.REDIS_HOST || 'localhost',
   port: Number(process.env.REDIS_PORT) || 6379,
+  password: process.env.REDIS_PASSWORD || undefined,
   maxRetriesPerRequest: null as null
 }
 
@@ -34,6 +32,48 @@ async function secretExists(namespace: string, name: string): Promise<boolean> {
     if (err.code === 404) return false
     throw err
   }
+}
+
+// A freshly-synced Database doesn't have its <name>-credentials Secret yet
+// — that only appears once ArgoCD has synced the CR and the Go controller
+// has reconciled it, which can take a while and isn't something this
+// process controls. Poll in the background (deliberately NOT awaited by
+// the caller, so it doesn't hold up the gitops job itself) and emit the
+// existing database:status socket event once it shows up, so the frontend
+// can react without polling the API itself.
+function pollForDatabaseSecretReady(
+  namespace: string,
+  databaseId: string,
+  databaseName: string,
+  log: ReturnType<typeof createDeployLogger>
+) {
+  const secretName = `${databaseName}-credentials`
+  const maxAttempts = 15
+  const intervalMs = 4000
+  let attempt = 0
+
+  log('Waiting for ArgoCD to sync and the controller to provision credentials...')
+
+  const tick = async () => {
+    attempt++
+    try {
+      if (await secretExists(namespace, secretName)) {
+        await prisma.database.update({ where: { id: databaseId }, data: { status: 'RUNNING' } }).catch(() => {})
+        emitDatabaseStatus(databaseId, 'RUNNING')
+        log('Credentials secret found — database is ready', 'success')
+        return
+      }
+    } catch (err: any) {
+      log(`Error checking for credentials secret: ${err.message}`, 'warn')
+    }
+    if (attempt < maxAttempts) {
+      setTimeout(tick, intervalMs)
+    } else {
+      log('Timed out waiting for credentials secret — it may still appear later, check back', 'warn')
+    }
+  }
+
+  tick()
 }
 
 async function commitAndPush(
@@ -59,8 +99,6 @@ const gitOpsWorker = new Worker('gitops', async (job: Job<Input>) => {
     const K8S_NAMESPACE = process.env.K8S_APP_NAMESPACE || 'default'
     let git: ReturnType<typeof simpleGit>
     try {
-        log('Step 8/8 · Sync GitOps repository')
-
         if(fs.existsSync(clonePath)){
             git = simpleGit(clonePath)
             await git.fetch()
@@ -71,6 +109,8 @@ const gitOpsWorker = new Worker('gitops', async (job: Job<Input>) => {
             git = simpleGit(clonePath)
             log('Cloned GitOps repository', 'success')
         }
+        await git.addConfig('user.name', 'IDP GitOps Bot')
+        await git.addConfig('user.email', 'gitops@idp.phumitada.com')
         if(job.data.action === 'sync'){
             if(job.data.kind === 'app'){
                 const dataQuery = await prisma.app.findUnique({
@@ -126,6 +166,7 @@ const gitOpsWorker = new Worker('gitops', async (job: Job<Input>) => {
                 fs.writeFileSync(fullPath, yaml, 'utf-8')
                 log(`Wrote manifest for database ${dataQuery.name}`, 'success')
                 await commitAndPush(git, fullPath, `sync ${job.data.kind} ${dataQuery.name}`, log)
+                pollForDatabaseSecretReady(K8S_NAMESPACE, dataQuery.id, dataQuery.name, log)
             }
         }else if(job.data.action === 'delete'){
             if(job.data.kind === 'app' || job.data.kind === 'database'){

@@ -65,6 +65,21 @@ export const databaseController = {
     }
   },
 
+  getCredentials: async (req: Request, res: Response) => {
+    try {
+      const userId = (req as AuthRequest).user?.userId
+      const role = (req as AuthRequest).user?.role
+      const result = await databaseService.getCredentials(req.params.id, userId!, role!)
+      if (!result.ready) {
+        res.status(404).json({ success: false, ready: false, message: 'Credentials not ready yet' })
+        return
+      }
+      res.status(200).json({ success: true, ready: true, data: result.credentials })
+    } catch (error: any) {
+      res.status(400).json({ success: false, message: error.message })
+    }
+  },
+
   updateDatabase: async (req: Request, res: Response) => {
     try {
       const userId = (req as AuthRequest).user?.userId

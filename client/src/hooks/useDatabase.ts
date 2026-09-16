@@ -35,6 +35,19 @@ export const useGetDatabaseById = (id: string) => {
   })
 }
 
+export const useDatabaseCredentials = (id: string, enabled: boolean) => {
+  return useQuery({
+    queryKey: ['Database', id, 'credentials'],
+    queryFn: () => databaseService.getCredentials(id),
+    enabled: enabled && !!id,
+    retry: false,
+    // ready:false is a valid, expected result (not-ready-yet) — don't treat
+    // it as stale data that needs refetching on its own; the socket event
+    // (database:status -> RUNNING) is what triggers the real refetch.
+    staleTime: Infinity,
+  })
+}
+
 export const useUpdateDatabase = () => {
   const queryClient = useQueryClient()
   return useMutation({

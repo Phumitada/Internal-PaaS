@@ -1,7 +1,12 @@
 import { prisma } from '../db/prisma'
 import { assertOwnership } from '../lib/assertOwnership'
 import { syncGitOps } from '../lib/gitopsJob'
+import { k8sCoreApi } from '../lib/k8sClient'
 import type { CreateDatabasePayload, QueryDatabase, UpdateDatabasePayload } from '../types/database.type'
+
+export type DatabaseCredentialsResult =
+    | { ready: true; credentials: Record<string, string> }
+    | { ready: false }
 
 export const databaseService = {
     createDatabase: async (payload: CreateDatabasePayload) => {
@@ -13,7 +18,11 @@ export const databaseService = {
                 userId: payload.userId,
             }
         })
-        await syncGitOps({ action: 'sync', kind: 'database', name: database.name, id: database.id })
+        // deployId: database.id — reuses the database's own id as the log
+        // stream key, so the frontend can `join` it immediately with the id
+        // it already has from this response, without needing a separate
+        // deployId back-channel.
+        await syncGitOps({ action: 'sync', kind: 'database', name: database.name, id: database.id, deployId: database.id })
         return { database }
     },
 
@@ -84,6 +93,34 @@ export const databaseService = {
         return database;
     },
 
+    // The ownership check below is the actual security boundary here, not
+    // K8s RBAC — the ServiceAccount can `get` any Secret in the namespace,
+    // not just the requesting user's own. If this check has a gap, a user
+    // could read another user's DB credentials just by guessing an id.
+    getCredentials: async (id: string, userId: string, role: string): Promise<DatabaseCredentialsResult> => {
+        const database = await prisma.database.findUnique({ where: { id } })
+        if (!database) throw new Error("Database not found")
+        assertOwnership(database, userId, role)
+
+        const namespace = process.env.K8S_APP_NAMESPACE || 'default'
+        const secretName = `${database.name}-credentials`
+        try {
+            const secret = await k8sCoreApi.readNamespacedSecret({ name: secretName, namespace })
+            const data = secret.data ?? {}
+            const credentials: Record<string, string> = {}
+            for (const [key, value] of Object.entries(data)) {
+                credentials[key] = Buffer.from(value as string, 'base64').toString('utf-8')
+            }
+            return { ready: true, credentials }
+        } catch (err: any) {
+            // The Secret only exists once GitOps has synced the CR and the
+            // Go controller has reconciled it — a freshly-created database
+            // legitimately doesn't have one yet.
+            if (err.code === 404) return { ready: false }
+            throw err
+        }
+    },
+
     updateDatabase: async (id: string, userId: string, role: string, payload: UpdateDatabasePayload) => {
         const database = await prisma.database.findUnique({
             where: { id }
@@ -101,12 +138,13 @@ export const databaseService = {
     deleteDatabase: async (id: string, userId: string) => {
         const database = await prisma.database.findUnique({
             where: { id },
-            include: { apps: { select: { id: true } } },
+            include: { apps: { select: { id: true, name: true } } },
         })
         if (!database) throw new Error('Database not found')
         if (database.userId !== userId) throw new Error('Forbidden')
         if (database.apps.length > 0) {
-            throw new Error('Disconnect all apps from this database before deleting it')
+            const names = database.apps.map(a => a.name).join(', ')
+            throw new Error(`Disconnect ${names} from this database before deleting it`)
         }
         await prisma.database.delete({ where: { id } })
         await syncGitOps({ action: 'delete', kind: 'database', name: database.name, id: database.id })
@@ -126,9 +164,22 @@ export const databaseService = {
             data: { apps: { connect: { id: appId } } },
             include: { apps: { select: { id: true, name: true } } },
         })
-        // application.yaml embeds databaseRef, so connecting a database
-        // changes the app's manifest, not the database's.
-        await syncGitOps({ action: 'sync', kind: 'app', name: app.name, id: app.id })
+        try {
+            // application.yaml embeds databaseRef, so connecting a database
+            // changes the app's manifest, not the database's.
+            await syncGitOps({ action: 'sync', kind: 'app', name: app.name, id: app.id })
+        } catch (err) {
+            // Without this, a failed sync here leaves the Postgres relation
+            // connected while the user sees "failed to connect" — they
+            // believe nothing happened, but deleteDatabase later refuses
+            // with a confusing "disconnect this app" for a connection they
+            // never knew succeeded. Roll back so connect is all-or-nothing.
+            await prisma.database.update({
+                where: { id: databaseId },
+                data: { apps: { disconnect: { id: appId } } },
+            }).catch(() => {})
+            throw err
+        }
         return result
     },
 

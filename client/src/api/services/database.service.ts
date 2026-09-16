@@ -16,6 +16,15 @@ export const databaseService = {
     return response.data.data
   },
 
+  getCredentials: async (id: string) => {
+    // 404 here means "not ready yet", not a real error — let the caller
+    // read response.data on the rejected error instead of throwing further.
+    const response = await api.get(`/database/${id}/credentials`, {
+      validateStatus: (status) => status === 200 || status === 404,
+    })
+    return response.data as { success: boolean; ready: boolean; data?: Record<string, string>; message?: string }
+  },
+
   updateDatabase: async (id: string, data: any) => {
     const response = await api.put(`/database/${id}`, data)
     return response.data.data

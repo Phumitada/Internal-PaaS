@@ -1,5 +1,5 @@
 import { useState,useRef,useEffect } from "react"
-import { Link, useParams, useNavigate } from "react-router-dom"
+import { Link, useParams, useNavigate, useSearchParams } from "react-router-dom"
 import {
   Plus, Search, ArrowLeft, GitBranch, MoreHorizontal,
   Play, Square, Trash2, Settings, ExternalLink, Terminal, RefreshCw,
@@ -817,7 +817,9 @@ function SettingsTab({ app }: { app: any }) {
 
 export function ServiceDetail() {
   const { id } = useParams<{ id: string }>()
-  const [tab, setTab] = useState<Tab>("deployments")
+  const [searchParams] = useSearchParams()
+  const initialTab = (searchParams.get("tab") as Tab | null) || "deployments"
+  const [tab, setTab] = useState<Tab>(initialTab)
   const [deployId, setDeployId] = useState<string | null>(null)
   const [waitingForBuild, setWaitingForBuild] = useState(false)
   const redeploy = useRedeploy()

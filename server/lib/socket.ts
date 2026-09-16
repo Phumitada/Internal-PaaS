@@ -7,7 +7,7 @@ let io: Server | null = null
 
 export function setupSocket(httpServer: HttpServer) {
   io = new Server(httpServer, {
-    cors: { origin: ['http://localhost:3000', 'http://localhost:5173'] }
+    cors: { origin: ['http://localhost:3000', 'http://localhost:5173','https://idp.phumitada.com'] }
   })
 
   io.on('connection', (socket) => {
