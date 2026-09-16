@@ -11,6 +11,7 @@
     "seed": "tsx src/seeds/seed.ts"
   },
   "dependencies": {
+    "@kubernetes/client-node": "^2.0.0",
     "@prisma/adapter-pg": "^7.4.1",
     "bcryptjs": "^2.4.3",
     "bullmq": "^5.79.3",

@@ -5,3 +5,4 @@ node_modules
 .env.*.local
 
 /generated/prisma
+/.gitops-clone

@@ -22,8 +22,9 @@ export interface AdminQueryApp {
   }
 
   export interface UpdateAppPayload {
-    name?: string     
+    name?: string
     repoUrl?: string
-    status?:  'IDLE' | 'BUILDING' | 'RUNNING' | 'STOPPED' | 'ERROR'
+    status?:  'IDLE' | 'BUILDING' | 'SYNCING' | 'RUNNING' | 'STOPPED' | 'ERROR'
     rootDir?: string
+    domain?: string
   }

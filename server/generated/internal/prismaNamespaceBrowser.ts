@@ -92,6 +92,7 @@ export const AppScalarFieldEnum = {
   id: 'id',
   name: 'name',
   repoUrl: 'repoUrl',
+  ghcrUrl: 'ghcrUrl',
   domain: 'domain',
   runtime: 'runtime',
   port: 'port',

@@ -20,6 +20,7 @@ export type Role = (typeof Role)[keyof typeof Role]
 export const AppStatus = {
   IDLE: 'IDLE',
   BUILDING: 'BUILDING',
+  SYNCING: 'SYNCING',
   RUNNING: 'RUNNING',
   STOPPED: 'STOPPED',
   ERROR: 'ERROR'

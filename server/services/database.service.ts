@@ -1,5 +1,6 @@
 import { prisma } from '../db/prisma'
 import { assertOwnership } from '../lib/assertOwnership'
+import { syncGitOps } from '../lib/gitopsJob'
 import type { CreateDatabasePayload, QueryDatabase, UpdateDatabasePayload } from '../types/database.type'
 
 export const databaseService = {
@@ -12,6 +13,7 @@ export const databaseService = {
                 userId: payload.userId,
             }
         })
+        await syncGitOps({ action: 'sync', kind: 'database', name: database.name, id: database.id })
         return { database }
     },
 
@@ -92,6 +94,7 @@ export const databaseService = {
             where: { id },
             data: payload,
         })
+        await syncGitOps({ action: 'sync', kind: 'database', name: update.name, id: update.id })
         return update
     },
 
@@ -106,6 +109,7 @@ export const databaseService = {
             throw new Error('Disconnect all apps from this database before deleting it')
         }
         await prisma.database.delete({ where: { id } })
+        await syncGitOps({ action: 'delete', kind: 'database', name: database.name, id: database.id })
     },
 
     connectApp: async (databaseId: string, appId: string, userId: string, role: string) => {
@@ -117,11 +121,15 @@ export const databaseService = {
         if (!app) throw new Error('App not found')
         assertOwnership(app, userId, role)
 
-        return prisma.database.update({
+        const result = await prisma.database.update({
             where: { id: databaseId },
             data: { apps: { connect: { id: appId } } },
             include: { apps: { select: { id: true, name: true } } },
         })
+        // application.yaml embeds databaseRef, so connecting a database
+        // changes the app's manifest, not the database's.
+        await syncGitOps({ action: 'sync', kind: 'app', name: app.name, id: app.id })
+        return result
     },
 
     disconnectApp: async (databaseId: string, appId: string, userId: string, role: string) => {
@@ -129,10 +137,15 @@ export const databaseService = {
         if (!database) throw new Error('Database not found')
         assertOwnership(database, userId, role)
 
-        return prisma.database.update({
+        const app = await prisma.app.findUnique({ where: { id: appId } })
+        if (!app) throw new Error('App not found')
+
+        const result = await prisma.database.update({
             where: { id: databaseId },
             data: { apps: { disconnect: { id: appId } } },
             include: { apps: { select: { id: true, name: true } } },
         })
+        await syncGitOps({ action: 'sync', kind: 'app', name: app.name, id: app.id })
+        return result
     },
 }

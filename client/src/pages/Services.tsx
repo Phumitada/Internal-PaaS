@@ -739,6 +739,7 @@ function SettingsTab({ app }: { app: any }) {
   const deleteApp = useDeleteApp()
   const [name, setName] = useState(app.name)
   const [rootDir, setRootDir] = useState(app.rootDir || ".")
+  const [domain, setDomain] = useState(app.domain || "")
 
   return (
     <div className="space-y-8 max-w-md">
@@ -761,8 +762,17 @@ function SettingsTab({ app }: { app: any }) {
               className="w-full px-3 py-2 text-sm border border-zinc-200 rounded focus:outline-none focus:border-zinc-400 font-mono"
             />
           </div>
+          <div>
+            <label className="block text-xs font-medium text-zinc-700 mb-1.5">Domain</label>
+            <input
+              value={domain}
+              onChange={(e) => setDomain(e.target.value)}
+              placeholder="app.example.com"
+              className="w-full px-3 py-2 text-sm border border-zinc-200 rounded focus:outline-none focus:border-zinc-400 font-mono"
+            />
+          </div>
           <button
-            onClick={() => updateApp.mutate({ id: app.id, data: { name, rootDir } })}
+            onClick={() => updateApp.mutate({ id: app.id, data: { name, rootDir, domain } })}
             disabled={updateApp.isPending}
             className="px-3 py-1.5 bg-zinc-900 text-white text-xs rounded hover:bg-zinc-700 transition-colors disabled:opacity-60"
           >
@@ -776,15 +786,29 @@ function SettingsTab({ app }: { app: any }) {
         <div className="border border-red-200 rounded-lg p-4 flex items-start justify-between gap-4">
           <div>
             <div className="text-sm font-medium text-zinc-900">Delete service</div>
-            <div className="text-xs text-zinc-500 mt-0.5">Stops the container and removes all data. Cannot be undone.</div>
+            <div className="text-xs text-zinc-500 mt-0.5">
+              {app.status === "STOPPED"
+                ? "Removes all data. Cannot be undone."
+                : "The service must be stopped before it can be deleted."}
+            </div>
           </div>
-          <button
-            onClick={() => deleteApp.mutate(app.id, { onSuccess: () => navigate("/services") })}
-            disabled={deleteApp.isPending}
-            className="flex-shrink-0 px-3 py-1.5 border border-red-300 text-red-600 text-xs rounded hover:bg-red-50 transition-colors disabled:opacity-60"
-          >
-            {deleteApp.isPending ? "Deleting..." : "Delete"}
-          </button>
+          {app.status === "STOPPED" ? (
+            <button
+              onClick={() => deleteApp.mutate(app.id, { onSuccess: () => navigate("/services") })}
+              disabled={deleteApp.isPending}
+              className="flex-shrink-0 px-3 py-1.5 border border-red-300 text-red-600 text-xs rounded hover:bg-red-50 transition-colors disabled:opacity-60"
+            >
+              {deleteApp.isPending ? "Deleting..." : "Delete"}
+            </button>
+          ) : (
+            <button
+              onClick={() => updateApp.mutate({ id: app.id, data: { status: "STOPPED" } })}
+              disabled={updateApp.isPending}
+              className="flex-shrink-0 px-3 py-1.5 border border-zinc-300 text-zinc-700 text-xs rounded hover:bg-zinc-50 transition-colors disabled:opacity-60"
+            >
+              {updateApp.isPending ? "Stopping..." : "Stop service"}
+            </button>
+          )}
         </div>
       </div>
     </div>

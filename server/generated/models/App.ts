@@ -38,6 +38,7 @@ export type AppMinAggregateOutputType = {
   id: string | null
   name: string | null
   repoUrl: string | null
+  ghcrUrl: string | null
   domain: string | null
   runtime: string | null
   port: number | null
@@ -52,6 +53,7 @@ export type AppMaxAggregateOutputType = {
   id: string | null
   name: string | null
   repoUrl: string | null
+  ghcrUrl: string | null
   domain: string | null
   runtime: string | null
   port: number | null
@@ -66,6 +68,7 @@ export type AppCountAggregateOutputType = {
   id: number
   name: number
   repoUrl: number
+  ghcrUrl: number
   domain: number
   runtime: number
   port: number
@@ -91,6 +94,7 @@ export type AppMinAggregateInputType = {
   id?: true
   name?: true
   repoUrl?: true
+  ghcrUrl?: true
   domain?: true
   runtime?: true
   port?: true
@@ -105,6 +109,7 @@ export type AppMaxAggregateInputType = {
   id?: true
   name?: true
   repoUrl?: true
+  ghcrUrl?: true
   domain?: true
   runtime?: true
   port?: true
@@ -119,6 +124,7 @@ export type AppCountAggregateInputType = {
   id?: true
   name?: true
   repoUrl?: true
+  ghcrUrl?: true
   domain?: true
   runtime?: true
   port?: true
@@ -221,6 +227,7 @@ export type AppGroupByOutputType = {
   id: string
   name: string
   repoUrl: string
+  ghcrUrl: string | null
   domain: string | null
   runtime: string | null
   port: number | null
@@ -259,6 +266,7 @@ export type AppWhereInput = {
   id?: Prisma.StringFilter<"App"> | string
   name?: Prisma.StringFilter<"App"> | string
   repoUrl?: Prisma.StringFilter<"App"> | string
+  ghcrUrl?: Prisma.StringNullableFilter<"App"> | string | null
   domain?: Prisma.StringNullableFilter<"App"> | string | null
   runtime?: Prisma.StringNullableFilter<"App"> | string | null
   port?: Prisma.IntNullableFilter<"App"> | number | null
@@ -278,6 +286,7 @@ export type AppOrderByWithRelationInput = {
   id?: Prisma.SortOrder
   name?: Prisma.SortOrder
   repoUrl?: Prisma.SortOrder
+  ghcrUrl?: Prisma.SortOrderInput | Prisma.SortOrder
   domain?: Prisma.SortOrderInput | Prisma.SortOrder
   runtime?: Prisma.SortOrderInput | Prisma.SortOrder
   port?: Prisma.SortOrderInput | Prisma.SortOrder
@@ -300,6 +309,7 @@ export type AppWhereUniqueInput = Prisma.AtLeast<{
   OR?: Prisma.AppWhereInput[]
   NOT?: Prisma.AppWhereInput | Prisma.AppWhereInput[]
   repoUrl?: Prisma.StringFilter<"App"> | string
+  ghcrUrl?: Prisma.StringNullableFilter<"App"> | string | null
   domain?: Prisma.StringNullableFilter<"App"> | string | null
   runtime?: Prisma.StringNullableFilter<"App"> | string | null
   port?: Prisma.IntNullableFilter<"App"> | number | null
@@ -319,6 +329,7 @@ export type AppOrderByWithAggregationInput = {
   id?: Prisma.SortOrder
   name?: Prisma.SortOrder
   repoUrl?: Prisma.SortOrder
+  ghcrUrl?: Prisma.SortOrderInput | Prisma.SortOrder
   domain?: Prisma.SortOrderInput | Prisma.SortOrder
   runtime?: Prisma.SortOrderInput | Prisma.SortOrder
   port?: Prisma.SortOrderInput | Prisma.SortOrder
@@ -342,6 +353,7 @@ export type AppScalarWhereWithAggregatesInput = {
   id?: Prisma.StringWithAggregatesFilter<"App"> | string
   name?: Prisma.StringWithAggregatesFilter<"App"> | string
   repoUrl?: Prisma.StringWithAggregatesFilter<"App"> | string
+  ghcrUrl?: Prisma.StringNullableWithAggregatesFilter<"App"> | string | null
   domain?: Prisma.StringNullableWithAggregatesFilter<"App"> | string | null
   runtime?: Prisma.StringNullableWithAggregatesFilter<"App"> | string | null
   port?: Prisma.IntNullableWithAggregatesFilter<"App"> | number | null
@@ -357,6 +369,7 @@ export type AppCreateInput = {
   id?: string
   name: string
   repoUrl: string
+  ghcrUrl?: string | null
   domain?: string | null
   runtime?: string | null
   port?: number | null
@@ -375,6 +388,7 @@ export type AppUncheckedCreateInput = {
   id?: string
   name: string
   repoUrl: string
+  ghcrUrl?: string | null
   domain?: string | null
   runtime?: string | null
   port?: number | null
@@ -393,6 +407,7 @@ export type AppUpdateInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.StringFieldUpdateOperationsInput | string
   repoUrl?: Prisma.StringFieldUpdateOperationsInput | string
+  ghcrUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   domain?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   runtime?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   port?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
@@ -411,6 +426,7 @@ export type AppUncheckedUpdateInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.StringFieldUpdateOperationsInput | string
   repoUrl?: Prisma.StringFieldUpdateOperationsInput | string
+  ghcrUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   domain?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   runtime?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   port?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
@@ -429,6 +445,7 @@ export type AppCreateManyInput = {
   id?: string
   name: string
   repoUrl: string
+  ghcrUrl?: string | null
   domain?: string | null
   runtime?: string | null
   port?: number | null
@@ -444,6 +461,7 @@ export type AppUpdateManyMutationInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.StringFieldUpdateOperationsInput | string
   repoUrl?: Prisma.StringFieldUpdateOperationsInput | string
+  ghcrUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   domain?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   runtime?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   port?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
@@ -458,6 +476,7 @@ export type AppUncheckedUpdateManyInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.StringFieldUpdateOperationsInput | string
   repoUrl?: Prisma.StringFieldUpdateOperationsInput | string
+  ghcrUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   domain?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   runtime?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   port?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
@@ -483,6 +502,7 @@ export type AppCountOrderByAggregateInput = {
   id?: Prisma.SortOrder
   name?: Prisma.SortOrder
   repoUrl?: Prisma.SortOrder
+  ghcrUrl?: Prisma.SortOrder
   domain?: Prisma.SortOrder
   runtime?: Prisma.SortOrder
   port?: Prisma.SortOrder
@@ -502,6 +522,7 @@ export type AppMaxOrderByAggregateInput = {
   id?: Prisma.SortOrder
   name?: Prisma.SortOrder
   repoUrl?: Prisma.SortOrder
+  ghcrUrl?: Prisma.SortOrder
   domain?: Prisma.SortOrder
   runtime?: Prisma.SortOrder
   port?: Prisma.SortOrder
@@ -516,6 +537,7 @@ export type AppMinOrderByAggregateInput = {
   id?: Prisma.SortOrder
   name?: Prisma.SortOrder
   repoUrl?: Prisma.SortOrder
+  ghcrUrl?: Prisma.SortOrder
   domain?: Prisma.SortOrder
   runtime?: Prisma.SortOrder
   port?: Prisma.SortOrder
@@ -659,6 +681,7 @@ export type AppCreateWithoutUserInput = {
   id?: string
   name: string
   repoUrl: string
+  ghcrUrl?: string | null
   domain?: string | null
   runtime?: string | null
   port?: number | null
@@ -676,6 +699,7 @@ export type AppUncheckedCreateWithoutUserInput = {
   id?: string
   name: string
   repoUrl: string
+  ghcrUrl?: string | null
   domain?: string | null
   runtime?: string | null
   port?: number | null
@@ -722,6 +746,7 @@ export type AppScalarWhereInput = {
   id?: Prisma.StringFilter<"App"> | string
   name?: Prisma.StringFilter<"App"> | string
   repoUrl?: Prisma.StringFilter<"App"> | string
+  ghcrUrl?: Prisma.StringNullableFilter<"App"> | string | null
   domain?: Prisma.StringNullableFilter<"App"> | string | null
   runtime?: Prisma.StringNullableFilter<"App"> | string | null
   port?: Prisma.IntNullableFilter<"App"> | number | null
@@ -737,6 +762,7 @@ export type AppCreateWithoutDeploysInput = {
   id?: string
   name: string
   repoUrl: string
+  ghcrUrl?: string | null
   domain?: string | null
   runtime?: string | null
   port?: number | null
@@ -754,6 +780,7 @@ export type AppUncheckedCreateWithoutDeploysInput = {
   id?: string
   name: string
   repoUrl: string
+  ghcrUrl?: string | null
   domain?: string | null
   runtime?: string | null
   port?: number | null
@@ -787,6 +814,7 @@ export type AppUpdateWithoutDeploysInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.StringFieldUpdateOperationsInput | string
   repoUrl?: Prisma.StringFieldUpdateOperationsInput | string
+  ghcrUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   domain?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   runtime?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   port?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
@@ -804,6 +832,7 @@ export type AppUncheckedUpdateWithoutDeploysInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.StringFieldUpdateOperationsInput | string
   repoUrl?: Prisma.StringFieldUpdateOperationsInput | string
+  ghcrUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   domain?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   runtime?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   port?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
@@ -821,6 +850,7 @@ export type AppCreateWithoutContainerInput = {
   id?: string
   name: string
   repoUrl: string
+  ghcrUrl?: string | null
   domain?: string | null
   runtime?: string | null
   port?: number | null
@@ -838,6 +868,7 @@ export type AppUncheckedCreateWithoutContainerInput = {
   id?: string
   name: string
   repoUrl: string
+  ghcrUrl?: string | null
   domain?: string | null
   runtime?: string | null
   port?: number | null
@@ -871,6 +902,7 @@ export type AppUpdateWithoutContainerInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.StringFieldUpdateOperationsInput | string
   repoUrl?: Prisma.StringFieldUpdateOperationsInput | string
+  ghcrUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   domain?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   runtime?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   port?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
@@ -888,6 +920,7 @@ export type AppUncheckedUpdateWithoutContainerInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.StringFieldUpdateOperationsInput | string
   repoUrl?: Prisma.StringFieldUpdateOperationsInput | string
+  ghcrUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   domain?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   runtime?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   port?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
@@ -905,6 +938,7 @@ export type AppCreateWithoutDatabasesInput = {
   id?: string
   name: string
   repoUrl: string
+  ghcrUrl?: string | null
   domain?: string | null
   runtime?: string | null
   port?: number | null
@@ -922,6 +956,7 @@ export type AppUncheckedCreateWithoutDatabasesInput = {
   id?: string
   name: string
   repoUrl: string
+  ghcrUrl?: string | null
   domain?: string | null
   runtime?: string | null
   port?: number | null
@@ -960,6 +995,7 @@ export type AppCreateManyUserInput = {
   id?: string
   name: string
   repoUrl: string
+  ghcrUrl?: string | null
   domain?: string | null
   runtime?: string | null
   port?: number | null
@@ -974,6 +1010,7 @@ export type AppUpdateWithoutUserInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.StringFieldUpdateOperationsInput | string
   repoUrl?: Prisma.StringFieldUpdateOperationsInput | string
+  ghcrUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   domain?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   runtime?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   port?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
@@ -991,6 +1028,7 @@ export type AppUncheckedUpdateWithoutUserInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.StringFieldUpdateOperationsInput | string
   repoUrl?: Prisma.StringFieldUpdateOperationsInput | string
+  ghcrUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   domain?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   runtime?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   port?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
@@ -1008,6 +1046,7 @@ export type AppUncheckedUpdateManyWithoutUserInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.StringFieldUpdateOperationsInput | string
   repoUrl?: Prisma.StringFieldUpdateOperationsInput | string
+  ghcrUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   domain?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   runtime?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   port?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
@@ -1022,6 +1061,7 @@ export type AppUpdateWithoutDatabasesInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.StringFieldUpdateOperationsInput | string
   repoUrl?: Prisma.StringFieldUpdateOperationsInput | string
+  ghcrUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   domain?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   runtime?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   port?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
@@ -1039,6 +1079,7 @@ export type AppUncheckedUpdateWithoutDatabasesInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.StringFieldUpdateOperationsInput | string
   repoUrl?: Prisma.StringFieldUpdateOperationsInput | string
+  ghcrUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   domain?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   runtime?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   port?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
@@ -1056,6 +1097,7 @@ export type AppUncheckedUpdateManyWithoutDatabasesInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.StringFieldUpdateOperationsInput | string
   repoUrl?: Prisma.StringFieldUpdateOperationsInput | string
+  ghcrUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   domain?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   runtime?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   port?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
@@ -1111,6 +1153,7 @@ export type AppSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = ru
   id?: boolean
   name?: boolean
   repoUrl?: boolean
+  ghcrUrl?: boolean
   domain?: boolean
   runtime?: boolean
   port?: boolean
@@ -1131,6 +1174,7 @@ export type AppSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Extension
   id?: boolean
   name?: boolean
   repoUrl?: boolean
+  ghcrUrl?: boolean
   domain?: boolean
   runtime?: boolean
   port?: boolean
@@ -1147,6 +1191,7 @@ export type AppSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Extension
   id?: boolean
   name?: boolean
   repoUrl?: boolean
+  ghcrUrl?: boolean
   domain?: boolean
   runtime?: boolean
   port?: boolean
@@ -1163,6 +1208,7 @@ export type AppSelectScalar = {
   id?: boolean
   name?: boolean
   repoUrl?: boolean
+  ghcrUrl?: boolean
   domain?: boolean
   runtime?: boolean
   port?: boolean
@@ -1174,7 +1220,7 @@ export type AppSelectScalar = {
   envVars?: boolean
 }
 
-export type AppOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "name" | "repoUrl" | "domain" | "runtime" | "port" | "status" | "userId" | "createdAt" | "updatedAt" | "rootDir" | "envVars", ExtArgs["result"]["app"]>
+export type AppOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "name" | "repoUrl" | "ghcrUrl" | "domain" | "runtime" | "port" | "status" | "userId" | "createdAt" | "updatedAt" | "rootDir" | "envVars", ExtArgs["result"]["app"]>
 export type AppInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   user?: boolean | Prisma.UserDefaultArgs<ExtArgs>
   deploys?: boolean | Prisma.App$deploysArgs<ExtArgs>
@@ -1201,6 +1247,7 @@ export type $AppPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs = 
     id: string
     name: string
     repoUrl: string
+    ghcrUrl: string | null
     domain: string | null
     runtime: string | null
     port: number | null
@@ -1640,6 +1687,7 @@ export interface AppFieldRefs {
   readonly id: Prisma.FieldRef<"App", 'String'>
   readonly name: Prisma.FieldRef<"App", 'String'>
   readonly repoUrl: Prisma.FieldRef<"App", 'String'>
+  readonly ghcrUrl: Prisma.FieldRef<"App", 'String'>
   readonly domain: Prisma.FieldRef<"App", 'String'>
   readonly runtime: Prisma.FieldRef<"App", 'String'>
   readonly port: Prisma.FieldRef<"App", 'Int'>

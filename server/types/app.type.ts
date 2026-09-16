@@ -24,8 +24,9 @@ export interface AdminQueryApp {
   }
 
 export interface UpdateAppPayload {
-  name?: string     
+  name?: string
   repoUrl?: string
   status?: AppStatus
   rootDir?: string
+  domain?: string
 }

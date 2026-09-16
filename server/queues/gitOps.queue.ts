@@ -1,9 +1,13 @@
-import { Queue } from 'bullmq'
+import { Queue, QueueEvents } from 'bullmq'
 
 const connection = {
   host: process.env.REDIS_HOST || 'localhost',
   port: Number(process.env.REDIS_PORT) || 6379,
-  maxRetriesPerRequest: null 
+  maxRetriesPerRequest: null
 }
 
 export const gitOpsQueue = new Queue('gitops', { connection })
+
+// build.worker awaits gitops jobs via QueueEvents so a deploy isn't marked
+// SUCCESS until the GitOps repo push actually completes.
+export const gitOpsQueueEvents = new QueueEvents('gitops', { connection })

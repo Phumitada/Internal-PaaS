@@ -57,7 +57,7 @@ model Deploy {
   commit    String?
   log       String?
   appId     String
-  app       App          @relation(fields: [appId], references: [id])
+  app       App          @relation(fields: [appId], references: [id], onDelete: Cascade)
   createdAt DateTime     @default(now())
   updatedAt DateTime     @updatedAt
   container Container?
@@ -68,15 +68,15 @@ model Deploy {
 
 model Container {
   id          String          @id @default(cuid())
-  containerId String          @unique 
+  containerId String          @unique
   name        String
   imageId     String?
   port        Int?
   status      ContainerStatus @default(CREATED)
-  appId       String          @unique  
-  app         App             @relation(fields: [appId], references: [id])
+  appId       String          @unique
+  app         App             @relation(fields: [appId], references: [id], onDelete: Cascade)
   deployId    String          @unique
-  deploy      Deploy          @relation(fields: [deployId], references: [id])
+  deploy      Deploy          @relation(fields: [deployId], references: [id], onDelete: Cascade)
   createdAt   DateTime        @default(now())
   updatedAt   DateTime        @updatedAt
 
@@ -105,6 +105,7 @@ enum Role {
 enum AppStatus {
   IDLE
   BUILDING
+  SYNCING
   RUNNING
   STOPPED
   ERROR

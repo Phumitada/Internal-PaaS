@@ -2,6 +2,7 @@ import { prisma } from '../db/prisma'
 import type { AdminQueryApp, CreateAppPayload, QueryApp, UpdateAppPayload } from '../types/app.type'
 import { buildQueue } from '../queues/build.queue'
 import { assertOwnership } from '../lib/assertOwnership'
+import { syncGitOps } from '../lib/gitopsJob'
 export type UpdateAppEnvPayload = Record<string, string>
 
 export const appService = {
@@ -135,6 +136,11 @@ export const appService = {
             where:{id},
             data: payload,
         })
+        if (payload.domain !== undefined) {
+            // application.yaml embeds domain; reflect the change without
+            // waiting for the next deploy.
+            await syncGitOps({ action: 'sync', kind: 'app', name: update.name, id: update.id })
+        }
         return update
     },
 
@@ -148,10 +154,14 @@ export const appService = {
             throw new Error("App has to be Stop")
         }
         await prisma.app.delete({where: {id}})
+        await syncGitOps({ action: 'delete', kind: 'app', name: app.name, id: app.id })
     },
 
     adminDeleteApp: async(id:string) => {
+        const app = await prisma.app.findUnique({ where: { id } })
+        if (!app) throw new Error('App not found')
         await prisma.app.delete({where: {id}})
+        await syncGitOps({ action: 'delete', kind: 'app', name: app.name, id: app.id })
     },
 
     updateAppEnv: async(id:string,userId:string,role:string,payload:UpdateAppEnvPayload) => {

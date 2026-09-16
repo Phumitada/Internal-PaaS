@@ -41,6 +41,7 @@ export const generateDockerfile = (
     const startCmd = hasPrisma
       ? `CMD ["sh", "-c", "npx prisma migrate deploy && npm start"]`
       : `CMD ["sh", "-c", "npm start"]`
+    const prismaGenerateCmd = hasPrisma ? 'RUN npx prisma generate' : ''
 
     switch (buildStrategy) {
       case 'build':
@@ -50,7 +51,7 @@ export const generateDockerfile = (
         COPY package*.json ./
         RUN npm install
         COPY . .
-        RUN npx prisma generate
+        ${prismaGenerateCmd}
         RUN npm run build
 
         FROM node:20-alpine
@@ -59,7 +60,7 @@ export const generateDockerfile = (
         COPY package*.json ./
         RUN npm install --production
         COPY --from=builder /app/dist ./dist
-        COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
+        ${hasPrisma ? 'COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma' : ''}
         RUN addgroup -S appgroup && adduser -S appuser -G appgroup && chown -R appuser:appgroup /app
         USER appuser
         EXPOSE 3000
@@ -70,11 +71,11 @@ export const generateDockerfile = (
         return `
           FROM node:20-alpine
           WORKDIR /app
-          ENV NODE_ENV=production
           COPY package*.json ./
           RUN npm install
           COPY . .
-          RUN npx prisma generate
+          ${prismaGenerateCmd}
+          ENV NODE_ENV=production
           RUN addgroup -S appgroup && adduser -S appuser -G appgroup && chown -R appuser:appgroup /app
           USER appuser
           EXPOSE 3000
@@ -89,7 +90,7 @@ export const generateDockerfile = (
           COPY package*.json ./
           RUN npm install --production
           COPY . .
-          RUN npx prisma generate
+          ${prismaGenerateCmd}
           RUN addgroup -S appgroup && adduser -S appuser -G appgroup && chown -R appuser:appgroup /app
           USER appuser
           EXPOSE 3000

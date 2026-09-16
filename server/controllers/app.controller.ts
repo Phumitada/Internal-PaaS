@@ -80,7 +80,7 @@ export const appController = {
         })
         return
         }
-        const app = await appService.updateApp(req.params.id,userId!,role!,req.body)
+        const app = await appService.updateApp(req.params.id,userId!,role!,parsed.data)
         res.status(200).json({success:true,data:app})
     } catch (error) {
         res.status(400).json({success:false,message:error.message})
