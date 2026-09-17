@@ -1,6 +1,6 @@
 export const generateNginxConf = (): string => `
 server {
-  listen 80;
+  listen 8080;
   location / {
     root /usr/share/nginx/html;
     index index.html;
@@ -13,15 +13,20 @@ export const generateDockerfile = (
   framework: string,
   buildStrategy: string,
   startCommand: string,
-  hasPrisma: boolean
+  hasPrisma: boolean,
+  envVars: Record<string, string> = {}
 ): string => {
   if (framework === 'react') {
+    const viteKeys = Object.keys(envVars).filter(k => k.startsWith('VITE_'))
+    const viteArgs = viteKeys.map(k => `ARG ${k}\n        ENV ${k}=$${k}`).join('\n        ')
+
     return `
         FROM node:22-alpine AS builder
         WORKDIR /app
         COPY package.json package-lock.json ./
         RUN npm ci
         COPY . .
+        ${viteArgs}
         RUN npm run build
 
         FROM nginx:1.27-alpine
@@ -29,7 +34,11 @@ export const generateDockerfile = (
         COPY --from=builder /app/dist /usr/share/nginx/html
         COPY nginx.conf /etc/nginx/conf.d/default.conf
 
-        EXPOSE 80
+        RUN addgroup -S appgroup && adduser -S appuser -G appgroup \
+            && chown -R appuser:appgroup /usr/share/nginx/html /var/cache/nginx /var/run /var/log/nginx /etc/nginx/conf.d/default.conf \
+            && touch /var/run/nginx.pid && chown appuser:appgroup /var/run/nginx.pid
+        USER appuser
+        EXPOSE 8080
 
         CMD ["nginx", "-g", "daemon off;"]
         `.trim()

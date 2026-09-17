@@ -7,6 +7,26 @@ import { useGetApps } from "@/hooks/useApp"
 import { useDatabaseStatus } from "@/hooks/useDatabaseStatus"
 import { useSocket } from "@/hooks/useSocket"
 
+// Ordered so the LAST matching stage in the log so far is the current one.
+// The "Waiting for ArgoCD" stage is open-ended (no fixed duration — it's
+// bounded by the ApplicationSet's own ~3min re-list interval, not
+// anything this app controls), so it gets an indeterminate bar instead of
+// a fake percentage.
+const PROVISIONING_STAGES: { match: RegExp; label: string }[] = [
+  { match: /Cloned GitOps repository|Updated local GitOps clone/, label: "Cloning GitOps repository" },
+  { match: /Wrote manifest/, label: "Writing manifest" },
+  { match: /Pushed GitOps commit|No changes to sync/, label: "Pushed to Git" },
+  { match: /Waiting for ArgoCD/, label: "Waiting for ArgoCD to sync (usually a few minutes)" },
+  { match: /Timed out waiting/, label: "Still waiting — taking longer than usual" },
+  { match: /Credentials secret found/, label: "Ready" },
+]
+
+function formatElapsed(seconds: number) {
+  const m = Math.floor(seconds / 60)
+  const s = seconds % 60
+  return m > 0 ? `${m}m ${s}s` : `${s}s`
+}
+
 // Reuses the same log stream the build/deploy pipeline uses — database.id
 // is passed as the gitops job's deployId (see database.service.ts), so
 // `join`-ing it here works exactly the same way. Only shown while PENDING;
@@ -15,27 +35,55 @@ import { useSocket } from "@/hooks/useSocket"
 function ProvisioningLog({ databaseId }: { databaseId: string }) {
   const { logs } = useSocket(databaseId)
   const bottomRef = useRef<HTMLDivElement>(null)
+  const [showRawLog, setShowRawLog] = useState(false)
+  const [elapsed, setElapsed] = useState(0)
+  const startRef = useRef(Date.now())
 
   useEffect(() => {
-    bottomRef.current?.scrollIntoView({ block: "end" })
-  }, [logs.length])
+    const id = setInterval(() => setElapsed(Math.floor((Date.now() - startRef.current) / 1000)), 1000)
+    return () => clearInterval(id)
+  }, [])
+
+  useEffect(() => {
+    if (showRawLog) bottomRef.current?.scrollIntoView({ block: "end" })
+  }, [logs.length, showRawLog])
+
+  let stageIndex = -1
+  for (let i = PROVISIONING_STAGES.length - 1; i >= 0 && stageIndex === -1; i--) {
+    if (logs.some((line) => PROVISIONING_STAGES[i].match.test(line))) stageIndex = i
+  }
+  const stage = PROVISIONING_STAGES[stageIndex]
 
   return (
     <div className="mt-2">
-      <div className="text-xs font-medium text-zinc-500 mb-1 flex items-center gap-1.5">
-        <span className="w-1.5 h-1.5 rounded-full bg-yellow-400 animate-pulse" />
-        Provisioning...
+      <div className="text-xs font-medium text-zinc-500 mb-1.5 flex items-center justify-between">
+        <span className="flex items-center gap-1.5">
+          <span className="w-1.5 h-1.5 rounded-full bg-yellow-400 animate-pulse" />
+          {stage ? stage.label : "Starting..."}
+        </span>
+        <span className="text-zinc-400 font-mono">{formatElapsed(elapsed)}</span>
       </div>
-      <div className="bg-zinc-900 rounded p-3 max-h-40 overflow-y-auto font-mono text-xs space-y-0.5">
-        {logs.length === 0 ? (
-          <div className="text-zinc-500">Waiting for logs...</div>
-        ) : (
-          logs.map((line, i) => (
-            <div key={i} className="text-zinc-300 break-all">{line}</div>
-          ))
-        )}
-        <div ref={bottomRef} />
+      <div className="h-1.5 w-full bg-zinc-200 rounded-full overflow-hidden">
+        <div className="h-full w-1/3 bg-zinc-900 rounded-full animate-indeterminate" />
       </div>
+      <button
+        onClick={() => setShowRawLog((s) => !s)}
+        className="text-xs text-zinc-400 hover:text-zinc-600 transition-colors mt-1.5"
+      >
+        {showRawLog ? "Hide" : "Show"} log details
+      </button>
+      {showRawLog && (
+        <div className="bg-zinc-900 rounded p-3 max-h-40 overflow-y-auto font-mono text-xs space-y-0.5 mt-1.5">
+          {logs.length === 0 ? (
+            <div className="text-zinc-500">Waiting for logs...</div>
+          ) : (
+            logs.map((line, i) => (
+              <div key={i} className="text-zinc-300 break-all">{line}</div>
+            ))
+          )}
+          <div ref={bottomRef} />
+        </div>
+      )}
     </div>
   )
 }

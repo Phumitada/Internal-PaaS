@@ -6,6 +6,16 @@ body {
   @apply font-sans bg-gray-50 text-gray-900;
 }
 
+/* Indeterminate progress bar — for waits with no known duration (e.g.
+   database provisioning), where a real percentage would be misleading. */
+@keyframes indeterminate-progress {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(250%); }
+}
+.animate-indeterminate {
+  animation: indeterminate-progress 1.4s ease-in-out infinite;
+}
+
 
 
 @layer base {

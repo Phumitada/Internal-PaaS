@@ -74,7 +74,7 @@ const worker = new Worker('build', async (job: Job<BuildJobData>) => {
     if (fs.existsSync(dockerfilePath)) {
       log('Dockerfile already exists, skipping generation', 'success')
     } else {
-      const dockerfile = generateDockerfile(framework, buildStrategy, startCommand, hasPrisma)
+      const dockerfile = generateDockerfile(framework, buildStrategy, startCommand, hasPrisma, (app?.envVars as Record<string, string>) ?? {})
       fs.writeFileSync(dockerfilePath, dockerfile)
       if (framework === 'react') {
         fs.writeFileSync(path.join(workDir, 'nginx.conf'), generateNginxConf())
@@ -83,20 +83,19 @@ const worker = new Worker('build', async (job: Job<BuildJobData>) => {
     }
 
     log('Step 4/5 · Build and push image (BuildKit)')
-    // BuildKit builds workDir (which now has the Dockerfile in it) and
-    // pushes straight to GHCR in one solve — replaces the old dockerode
-    // build (Step 4) + push (Step 7). There's no Docker daemon to talk to
-    // from inside the k8s pod anymore, and buildkitd runs as its own
-    // in-cluster Deployment instead.
+    const viteBuildArgs = Object.fromEntries(
+      Object.entries((app?.envVars as Record<string, string>) ?? {}).filter(([k]) => k.startsWith('VITE_'))
+    )
     await runBuildKitBuild({
       contextDir: workDir,
       imageTag,
       platform: 'linux/amd64',
+      buildArgs: viteBuildArgs,
       onLog: (line) => log(stripAnsi(line))
     })
     log('Image built and pushed to GHCR', 'success')
 
-    const internalPort = getInternalPort(framework)
+    const internalPort = getInternalPort(framework, app?.envVars as Record<string, string>)
 
     await prisma.app.update({
       where: { id: appId },
@@ -104,10 +103,6 @@ const worker = new Worker('build', async (job: Job<BuildJobData>) => {
     })
 
     log('Step 5/5 · Sync GitOps repository')
-    // GitOps sync runs as its own BullMQ job (gitops.worker) but logs into
-    // this same deployId, so the frontend sees one continuous pipeline.
-    // It's also what actually makes the image run — idp-controller
-    // reconciles the Application CR it writes into a real k8s Deployment.
     await syncGitOps({ action: 'sync', kind: 'app', name: app!.name, id: appId, deployId })
 
     await prisma.app.update({

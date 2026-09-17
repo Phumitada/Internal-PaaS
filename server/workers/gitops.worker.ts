@@ -34,13 +34,6 @@ async function secretExists(namespace: string, name: string): Promise<boolean> {
   }
 }
 
-// A freshly-synced Database doesn't have its <name>-credentials Secret yet
-// — that only appears once ArgoCD has synced the CR and the Go controller
-// has reconciled it, which can take a while and isn't something this
-// process controls. Poll in the background (deliberately NOT awaited by
-// the caller, so it doesn't hold up the gitops job itself) and emit the
-// existing database:status socket event once it shows up, so the frontend
-// can react without polling the API itself.
 function pollForDatabaseSecretReady(
   namespace: string,
   databaseId: string,
@@ -48,8 +41,8 @@ function pollForDatabaseSecretReady(
   log: ReturnType<typeof createDeployLogger>
 ) {
   const secretName = `${databaseName}-credentials`
-  const maxAttempts = 15
-  const intervalMs = 4000
+  const maxAttempts = 40
+  const intervalMs = 10000
   let attempt = 0
 
   log('Waiting for ArgoCD to sync and the controller to provision credentials...')
@@ -62,6 +55,9 @@ function pollForDatabaseSecretReady(
         emitDatabaseStatus(databaseId, 'RUNNING')
         log('Credentials secret found — database is ready', 'success')
         return
+      }
+      if (attempt % 5 === 0) {
+        log(`Still waiting... (${Math.round((attempt * intervalMs) / 1000)}s elapsed)`)
       }
     } catch (err: any) {
       log(`Error checking for credentials secret: ${err.message}`, 'warn')

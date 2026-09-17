@@ -2,12 +2,6 @@ import { spawn } from 'child_process'
 import fs from 'fs'
 import path from 'path'
 
-// There is no official/maintained Node.js client for BuildKit's gRPC API
-// (confirmed before writing this — only a Go client and a third-party Rust
-// one exist). Shelling out to `buildctl`, the CLI BuildKit itself ships and
-// maintains, is the documented approach for any language without a native
-// client — the same thing `docker buildx` does under the hood.
-
 const RUNTIME_DIR = '/tmp/buildkit-client'
 
 function writeOnce(filePath: string, content: string): string {
@@ -18,14 +12,6 @@ function writeOnce(filePath: string, content: string): string {
   return filePath
 }
 
-// buildkitd's Deployment+Service runs in-cluster behind mTLS (required —
-// BuildKit's own docs call plain TCP without mTLS dangerous, since the
-// build executor can call back into the API). The three cert/key PEMs
-// arrive as env vars via envFrom (idp-api-env-secret), the same delivery
-// mechanism every other app's env vars already use — there was no way to
-// add a second volume mount to idp-api's pod spec, since that Deployment
-// is generated and reconciled by idp-controller from the Application CRD,
-// which only supports envSecretRefs, not arbitrary volumes.
 function getClientCertPaths() {
   const ca = process.env.BUILDKIT_CLIENT_CA
   const cert = process.env.BUILDKIT_CLIENT_CERT
@@ -40,8 +26,6 @@ function getClientCertPaths() {
   }
 }
 
-// buildctl reads registry push credentials from a docker config.json,
-// same as the docker CLI — there's no --username/--password flag.
 function getDockerConfigDir(): string {
   const dir = path.join(RUNTIME_DIR, 'docker-config')
   const configPath = path.join(dir, 'config.json')
@@ -58,14 +42,11 @@ export interface BuildKitBuildOptions {
   contextDir: string
   imageTag: string
   platform?: string
+  buildArgs?: Record<string, string>
   onLog: (line: string) => void
 }
 
-// Builds contextDir with the Dockerfile already inside it and pushes the
-// result straight to the registry in one BuildKit solve
-// (type=image,push=true) — collapses the old build.worker.ts Step 4 (build)
-// and Step 7 (push) into a single call.
-export function runBuildKitBuild({ contextDir, imageTag, platform = 'linux/amd64', onLog }: BuildKitBuildOptions): Promise<void> {
+export function runBuildKitBuild({ contextDir, imageTag, platform = 'linux/amd64', buildArgs = {}, onLog }: BuildKitBuildOptions): Promise<void> {
   return new Promise((resolve, reject) => {
     const addr = process.env.BUILDKIT_ADDR || 'tcp://buildkitd:1234'
     const { ca, cert, key } = getClientCertPaths()
@@ -84,6 +65,10 @@ export function runBuildKitBuild({ contextDir, imageTag, platform = 'linux/amd64
       '--output', `type=image,name=${imageTag},push=true`,
       '--progress', 'plain',
     ]
+
+    for (const [argKey, argValue] of Object.entries(buildArgs)) {
+      args.push('--opt', `build-arg:${argKey}=${argValue}`)
+    }
 
     const child = spawn('buildctl', args, {
       env: { ...process.env, DOCKER_CONFIG: dockerConfigDir },
