@@ -11,14 +11,14 @@ The project was built to explore how far a conventional Node.js application can 
 ## Architecture
 
 ```
- ┌──────────┐   commit    ┌─────────────┐   push    ┌────────────────┐
- │  Web UI  │────────────▶│  build.worker │─────────▶│  BuildKit (mTLS) │
- │ (React)  │             │  (BullMQ)     │  image    │  in-cluster       │
- └──────────┘             └──────┬────────┘           └────────┬─────────┘
+ ┌──────────┐   commit    ┌───────────────┐   push    ┌──────────────────┐
+ │  Web UI  │────────────▶│  build.worker │─────────▶ │  BuildKit (mTLS) │
+ │ (React)  │             │  (BullMQ)     │  image    │  in-cluster      │
+ └──────────┘             └───────┬───────┘           └─────────┬────────┘
        ▲                          │                             │ push
        │ socket.io                │ enqueue                     ▼
-       │ (live logs)               ▼                     container registry
-       │                    ┌──────────────┐
+       │ (live logs)              ▼                     container registry
+       │                    ┌───────────────┐
        │                    │ gitops.worker │
        │                    │  (BullMQ)     │
        │                    └──────┬────────┘
