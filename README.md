@@ -1,287 +1,148 @@
 # Internal PaaS
 
-## 🚀 Internal Platform as a Service
+A self-hosted Platform-as-a-Service that deploys applications from Git repositories onto a Kubernetes cluster through a GitOps pipeline, without requiring end users to author Kubernetes manifests or maintain CI/CD configuration by hand.
 
-A self-hosted PaaS solution for deploying and managing applications internally. Built with React, Express, PostgreSQL, Redis, and Docker - perfect for teams who want to control their own deployment infrastructure.
+## Overview
 
-## ✨ Features
+Internal PaaS provides a Heroku-style developer experience — connect a repository, configure environment variables, deploy — while the underlying infrastructure is a Kubernetes cluster managed declaratively through Git. The system is composed of a web control plane (this repository) and a Kubernetes-native reconciliation layer: a custom Kubernetes controller and ArgoCD, both external to this repository, which the control plane integrates with rather than replaces.
 
-### 🎯 Application Management
-- **Git-based Deployments** - Connect your repositories and deploy with a single click
-- **Build System** - Automated build pipeline with configurable runtimes
-- **Container Orchestration** - Docker container management for each application
-- **Custom Domains** - Assign custom domains to your applications
-- **Port Configuration** - Configure application ports dynamically
+The project was built to explore how far a conventional Node.js application can be pushed as the control plane for infrastructure that is normally driven by cluster-native tooling, and to work through the constraints that model imposes: no privileged access to the underlying nodes, no direct cluster-mutation permissions beyond a narrow RBAC surface, and a reconciliation loop (ArgoCD) that runs on its own schedule rather than on request.
 
-### 🔐 Authentication & Security
-- **JWT Authentication** - Secure token-based authentication
-- **Role-Based Access** - User and admin roles
-- **Protected Routes** - Middleware-protected API endpoints
-- **Refresh Tokens** - Automatic token refresh for seamless sessions
+## Architecture
 
-### 🔄 CI/CD Integration
-- **Webhook Support** - Git webhook integration for automatic deployments
-- **Build Queues** - Redis-powered job queue with BullMQ
-- **Deploy History** - Track deployment status and logs
-- **Rollback Support** - Easy rollback to previous deployments
+```
+ ┌──────────┐   commit    ┌─────────────┐   push    ┌────────────────┐
+ │  Web UI  │────────────▶│  build.worker │─────────▶│  BuildKit (mTLS) │
+ │ (React)  │             │  (BullMQ)     │  image    │  in-cluster       │
+ └──────────┘             └──────┬────────┘           └────────┬─────────┘
+       ▲                          │                             │ push
+       │ socket.io                │ enqueue                     ▼
+       │ (live logs)               ▼                     container registry
+       │                    ┌──────────────┐
+       │                    │ gitops.worker │
+       │                    │  (BullMQ)     │
+       │                    └──────┬────────┘
+       │                           │ commit + push manifest
+       │                           ▼
+       │                  GitOps manifest repository
+       │                           │
+       │                           ▼ (poll interval)
+       │                    ArgoCD ApplicationSet
+       │                           │ sync
+       │                           ▼
+       │              Application / Database Custom Resource
+       │                           │ reconcile
+       │                           ▼
+       └──────────────── Kubernetes Deployment, Service, Ingress, Secret
+                          (managed by an external Go controller)
+```
 
-### 📊 Monitoring & Management
-- **Real-time Status** - Track application status (IDLE, BUILDING, RUNNING, STOPPED, ERROR)
-- **Container Management** - Start, stop, and monitor Docker containers
-- **Deploy Logs** - View build and deployment logs
-- **Health Checks** - API health monitoring
+A deployment request passes through two independent, queue-backed workers rather than a single synchronous pipeline:
 
-## 🛠️ Technology Stack
+1. **`build.worker`** clones the target repository, detects its runtime (React/Vite or Express, with sub-strategies for compiled, `ts-node`, or plain Node execution), generates a Dockerfile when the repository does not already provide one, and builds and pushes the resulting image.
+2. **`gitops.worker`** writes the corresponding `Application` or `Database` manifest to a separate Git repository, updates the target Kubernetes `Secret` holding the application's environment variables directly through the Kubernetes API, and polls for the downstream reconciliation to complete, since that reconciliation runs on ArgoCD's own interval and is outside this system's control.
 
-### Frontend
-- **React 18** - Modern React with hooks
-- **TypeScript** - Type-safe development
-- **Tailwind CSS** - Utility-first styling
-- **shadcn/ui** - Beautiful UI components
-- **Zustand** - Lightweight state management
-- **React Router** - Client-side routing
-- **TanStack Query** - Server state management
-- **Axios** - HTTP client with interceptors
+Both workers log into the same identifier, so a single deployment's output — spanning two separate background jobs — is streamed to the frontend as one continuous log over a Socket.IO channel, backed by an in-memory backlog buffer for clients that join mid-stream.
 
-### Backend
-- **Express.js** - Fast and minimalist web framework
-- **TypeScript** - Type-safe backend development
-- **Prisma** - Modern ORM for PostgreSQL
-- **PostgreSQL** - Relational database
-- **Redis** - In-memory data store for queues
-- **BullMQ** - Redis-based queue for background jobs
-- **Dockerode** - Docker API for container management
-- **Simple Git** - Git operations for deployments
-- **JWT** - JSON Web Token authentication
-- **Zod** - Schema validation
+## Key Engineering Decisions
 
-### Infrastructure
-- **Docker** - Containerization
-- **Docker Compose** - Multi-container orchestration
-- **PostgreSQL 15** - Database
-- **Redis 7** - Cache and queue
+**Image builds via BuildKit rather than a Docker daemon.** The control plane runs as a pod inside the cluster it manages, and has no Docker socket to talk to. Mounting the host's Docker socket into the pod was considered and rejected, since it grants root-equivalent access to the entire node. Image builds instead run against a dedicated `buildkitd` deployment inside the cluster, reached over mutual TLS, communicated with through `buildctl` — there is no maintained Node.js client for BuildKit's gRPC API, so the control plane shells out to the CLI BuildKit itself ships, the same approach `docker buildx` uses internally.
 
-## 📁 Project Structure
+**GitOps rather than direct cluster mutation.** The control plane never calls the Kubernetes API to create application workloads. It writes declarative manifests to Git; ArgoCD detects and applies them; a separate Kubernetes controller reconciles the platform's custom resources into standard objects. This keeps the control plane's own permissions minimal — Git write access and a narrow Secret read/write scope — at the cost of the platform having to account for reconciliation latency it cannot directly observe or shorten.
+
+**Application-layer authorization for credential access.** Kubernetes RBAC alone does not adequately scope access to database credentials: a service account with permission to read Secrets in a namespace can read all of them, not only those belonging to the requesting user. The actual authorization boundary for the credential-viewing feature is therefore enforced in the application layer — an ownership check runs before any Kubernetes API call is made — and RBAC is treated as a coarse backstop rather than the primary control.
+
+**Non-root container images.** Generated Dockerfiles run application processes as an unprivileged user rather than root. This has a direct consequence for port selection: ports below 1024 require elevated privileges to bind, so generated images default to unprivileged ports and the platform's internal port resolution accounts for this rather than assuming a fixed port per framework.
+
+**Build-time versus runtime configuration.** Static frontend builds (Vite) inline environment variables into the compiled JavaScript at build time; a container's runtime environment variables are invisible to code that no longer exists as a running process by the time the container starts. The build pipeline distinguishes between variables that must be supplied as Docker build arguments (anything intended for a client bundle) and variables that are only ever needed at runtime, and threads the former through the image build step accordingly.
+
+## Technology Stack
+
+**Frontend** — React 18, TypeScript, Vite, Tailwind CSS, TanStack Query, Zustand, React Router, Axios, Socket.IO client.
+
+**Backend** — Node.js, TypeScript, Express, Prisma ORM, PostgreSQL, Redis, BullMQ, Socket.IO, `simple-git`, `@kubernetes/client-node`, Zod.
+
+**Infrastructure** — Docker, BuildKit, Kubernetes, ArgoCD, a custom Kubernetes controller (external to this repository), GitHub Container Registry.
+
+## Core Capabilities
+
+- Git-connected application deployment with automatic runtime detection and Dockerfile generation.
+- Queue-backed build and deployment pipeline with live, streamed build and provisioning logs.
+- Managed database provisioning (PostgreSQL, Redis) with credential access gated by application-layer ownership checks and a reveal-on-demand interface.
+- Environment variable management per application, including correct handling of build-time-only configuration for static frontends.
+- JWT-based authentication with access and refresh tokens, and role-based authorization.
+- Deployment history with per-deployment status and logs.
+
+## Project Structure
 
 ```
 Internal-PaaS/
-├── 📁 client/                 # React frontend
-│   ├── 📁 src/
-│   │   ├── 📁 components/     # Reusable components
-│   │   ├── 📁 hooks/          # Custom React hooks
-│   │   ├── � layout/         # Layout components
-│   │   ├── 📁 pages/          # Page components
-│   │   ├── � stores/         # Zustand state stores
-│   │   ├── � api/            # API client and services
-│   │   └── � utils/          # Utility functions
-│   ├── � package.json
-│   └── 📄 vite.config.ts
-├── 📁 server/                 # Express backend
-│   ├── 📁 controllers/        # Route controllers
-│   ├── � routes/            # API routes
-│   ├── � services/          # Business logic
-│   ├── � middleware/        # Express middleware
-│   ├── � queues/            # BullMQ job queues
-│   ├── 📁 workers/           # Background job workers
-│   ├── 📁 prisma/            # Database schema and migrations
-│   ├── 📁 lib/               # Shared libraries
-│   ├── 📁 types/             # TypeScript types
-│   ├── 📁 validator/         # Request validation schemas
-│   └── 📄 index.ts           # Server entry point
-├── 📄 docker-compose.yml     # Docker services configuration
-└── 📄 README.md
+├── client/                  React frontend
+│   └── src/
+│       ├── api/              API client and service definitions
+│       ├── components/       Shared UI components
+│       ├── hooks/             Data-fetching and socket hooks
+│       ├── pages/             Route-level views
+│       └── stores/            Client-side state (Zustand)
+├── server/                  Express backend
+│   ├── controllers/           Route handlers
+│   ├── services/               Business logic
+│   ├── workers/                 BullMQ workers (build, gitops)
+│   ├── queues/                   BullMQ queue definitions
+│   ├── lib/                       Shared infrastructure (Kubernetes client,
+│   │                                BuildKit client, Dockerfile generation,
+│   │                                logging)
+│   ├── middleware/                 Express middleware
+│   ├── prisma/                       Database schema and migrations
+│   └── validator/                     Request validation schemas
+└── docker-compose.yml         Local PostgreSQL and Redis for development
 ```
 
-## � Quick Start
+## Local Development
+
+Local development runs the control plane against local PostgreSQL and Redis instances. It does not require a Kubernetes cluster; features that depend on cluster reconciliation (credential provisioning, live application status) require the backend to run inside the target cluster with the appropriate service account.
 
 ### Prerequisites
-- Node.js 18+
+
+- Node.js 20 or later
 - Docker and Docker Compose
 - Git
 
-### Installation
+### Setup
 
-1. **Clone the repository**
-   ```bash
-   git clone <repository-url>
-   cd Internal-PaaS
-   ```
-
-2. **Start infrastructure services**
-   ```bash
-   docker-compose up -d
-   ```
-
-3. **Install backend dependencies**
-   ```bash
-   cd server
-   npm install
-   ```
-
-4. **Configure environment variables**
-   ```bash
-   cp .env.example .env
-   # Edit .env with your configuration
-   ```
-
-5. **Run database migrations**
-   ```bash
-   npx prisma migrate dev
-   ```
-
-6. **Start backend server**
-   ```bash
-   npm run dev
-   ```
-
-7. **Install frontend dependencies**
-   ```bash
-   cd ../client
-   npm install
-   ```
-
-8. **Start frontend development server**
-   ```bash
-   npm run dev
-   ```
-
-9. **Access the application**
-   - Frontend: `http://localhost:5173`
-   - Backend API: `http://localhost:5001`
-
-## 🔧 Configuration
-
-### Environment Variables
-
-#### Server (.env)
-```env
-DATABASE_URL="postgresql://admin:password123@localhost:5432/appdb"
-REDIS_URL="redis://localhost:6379"
-JWT_SECRET="your-jwt-secret"
-JWT_REFRESH_SECRET="your-refresh-secret"
-PORT=5001
-```
-
-#### Client (.env)
-```env
-VITE_API_URL=http://localhost:5001/api
-```
-
-## 📊 Database Schema
-
-The application uses the following main entities:
-
-- **User** - User accounts with authentication
-- **App** - Application configurations and metadata
-- **Deploy** - Deployment records and logs
-- **Container** - Docker container information
-
-## 🔐 Authentication Flow
-
-1. **Registration** - Users create accounts with email/password
-2. **Login** - Credentials exchanged for JWT access and refresh tokens
-3. **Token Refresh** - Automatic refresh using refresh tokens
-4. **Protected Access** - API routes protected by authentication middleware
-
-## 🚢 Deployment Workflow
-
-1. **Create App** - Register a new application with repository URL
-2. **Configure** - Set runtime, port, and domain settings
-3. **Deploy** - Trigger build and deployment
-4. **Build** - Worker clones repo, builds Docker image
-5. **Run** - Container starts with configured settings
-6. **Monitor** - Track status and logs in dashboard
-
-## 🎨 Frontend Features
-
-- **Dashboard** - Overview of all applications
-- **App Management** - Create, edit, delete applications
-- **Deploy History** - View deployment logs and status
-- **Container Control** - Start/stop containers
-- **Responsive Design** - Works on desktop and mobile
-- **Dark Mode** - Toggle between light/dark themes
-
-## � API Endpoints
-
-### Authentication
-- `POST /api/auth/register` - Register new user
-- `POST /api/auth/login` - Login user
-- `POST /api/auth/refresh` - Refresh access token
-- `POST /api/auth/logout` - Logout user
-
-### Applications
-- `GET /api/app` - Get all user applications
-- `POST /api/app` - Create new application
-- `GET /api/app/:id` - Get application details
-- `PUT /api/app/:id` - Update application
-- `DELETE /api/app/:id` - Delete application
-- `POST /api/app/:id/deploy` - Trigger deployment
-
-### Webhooks
-- `POST /api/webhook` - Git webhook handler
-
-## 🐳 Docker Services
-
-The project includes Docker Compose configuration for:
-
-- **PostgreSQL 15** - Primary database
-- **Redis 7** - Cache and job queue
-
-## 📝 Development
-
-### Backend Development
 ```bash
-cd server
-npm run dev          # Start development server with hot reload
-npm run build        # Build TypeScript
-npm run studio       # Open Prisma Studio
-```
+git clone <repository-url>
+cd Internal-PaaS
 
-### Frontend Development
-```bash
-cd client
-npm run dev          # Start Vite dev server
-npm run build        # Build for production
-npm run preview      # Preview production build
-npm run lint         # Run ESLint
-npm run format       # Format code with Prettier
-```
-
-## 🚀 Production Deployment
-
-### Build Frontend
-```bash
-cd client
-npm run build
-```
-
-### Build Backend
-```bash
-cd server
-npm run build
-```
-
-### Start Production Services
-```bash
 docker-compose up -d
+
 cd server
-node dist/index.js
+npm install
+cp .env.example .env
+npx prisma migrate dev
+npm run dev
+
+cd ../client
+npm install
+cp .env.example .env
+npm run dev
 ```
 
-## 🤝 Contributing
+The frontend is served at `http://localhost:5173`; the backend API and Socket.IO server at `http://localhost:5001`.
 
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
+## Container Images
 
-## 📄 License
+Both the frontend and backend ship with production Dockerfiles. The backend image embeds the `buildctl` binary required to communicate with the in-cluster BuildKit deployment. The frontend image is a multi-stage build; API and Socket.IO endpoints must be supplied as build arguments, since they are compiled into the static bundle rather than read at container runtime:
 
-MIT License - feel free to use this project for your internal PaaS needs!
+```bash
+docker build -t internal-paas-server ./server
 
-## � Acknowledgments
+docker build \
+  --build-arg VITE_API_URL=https://api.example.com/api \
+  --build-arg VITE_SOCKET_URL=https://api.example.com \
+  -t internal-paas-client ./client
+```
 
-- Built with modern web technologies
-- Inspired by platforms like Heroku, Vercel, and Railway
-- Designed for internal team deployment needs
+## License
+
+MIT
