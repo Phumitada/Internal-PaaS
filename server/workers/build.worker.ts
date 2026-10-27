@@ -3,7 +3,7 @@ import path from 'path'
 import fs from 'fs'
 import { Worker, Job } from 'bullmq'
 import { prisma } from '../db/prisma'
-import { generateDockerfile, generateNginxConf } from '../lib/generateDockerfile'
+import { generateDockerfile, generateNginxConf, getBuildTimeEnv, NextOutputMode } from '../lib/generateDockerfile'
 import { getLogs } from '../lib/logStore'
 import { getInternalPort } from '../lib/getInternalPort'
 import { createDeployLogger } from '../lib/logger'
@@ -31,6 +31,34 @@ const stripAnsi = (text: string) => text.replace(ANSI_REGEX, '')
 // Postgres text columns reject the NUL byte; build output can contain one.
 const NULL_BYTE_REGEX = new RegExp(String.fromCharCode(0), 'g')
 
+const NEXT_CONFIG_FILES = ['next.config.js', 'next.config.mjs', 'next.config.cjs', 'next.config.ts']
+
+// อ่าน output: 'standalone' | 'export' จาก next.config เพื่อเลือก Dockerfile ให้ตรง
+const detectNextOutput = (workDir: string): NextOutputMode => {
+  for (const file of NEXT_CONFIG_FILES) {
+    const configPath = path.join(workDir, file)
+    if (!fs.existsSync(configPath)) continue
+    const match = fs.readFileSync(configPath, 'utf-8').match(/output\s*:\s*['"`](standalone|export)['"`]/)
+    return (match?.[1] as NextOutputMode) ?? 'default'
+  }
+  return 'default'
+}
+
+const PRISMA_CONFIG_FILES = ['prisma.config.ts', 'prisma.config.js', 'prisma.config.mjs', 'prisma.config.cjs']
+
+// หา seed: prisma config (package.json#prisma.seed หรือ prisma.config migrations.seed) -> prisma db seed
+// ถ้าไม่มีแต่มี script seed ใน package.json -> npm run seed
+const detectSeedCommand = (workDir: string, packageJson: any): string | null => {
+  if (packageJson.prisma?.seed) return 'npx prisma db seed'
+  const hasConfigSeed = PRISMA_CONFIG_FILES.some(file => {
+    const configPath = path.join(workDir, file)
+    return fs.existsSync(configPath) && /\bseed\s*:/.test(fs.readFileSync(configPath, 'utf-8'))
+  })
+  if (hasConfigSeed) return 'npx prisma db seed'
+  if (packageJson.scripts?.seed) return 'npm run seed'
+  return null
+}
+
 const worker = new Worker('build', async (job: Job<BuildJobData>) => {
   const { appId, repoUrl, deployId } = job.data
   const log = createDeployLogger(deployId)
@@ -55,8 +83,11 @@ const worker = new Worker('build', async (job: Job<BuildJobData>) => {
     const deps = { ...packageJson.dependencies, ...packageJson.devDependencies }
     const scripts = packageJson.scripts || {}
 
+    // เช็ค next/nest ก่อน เพราะ next มี react และ nest มักมี express ติดมาด้วย
     let framework = 'unknown'
-    if (deps['express']) framework = 'express'
+    if (deps['next']) framework = 'next'
+    else if (deps['@nestjs/core']) framework = 'nest'
+    else if (deps['express']) framework = 'express'
     else if (deps['react'] && deps['vite']) framework = 'react'
 
     let buildStrategy = 'none'
@@ -66,36 +97,37 @@ const worker = new Worker('build', async (job: Job<BuildJobData>) => {
 
     const startCommand = scripts.start || 'node index.js'
     const hasPrisma = fs.existsSync(path.join(workDir, 'prisma', 'schema.prisma'))
-    log(`Detected framework=${framework}, strategy=${buildStrategy}`, 'success')
-    const imageTag = `ghcr.io/${namespace}/${app!.name}:${shortSha}`
+    const seedCommand = hasPrisma ? detectSeedCommand(workDir, packageJson) : null
+    const nextOutput = framework === 'next' ? detectNextOutput(workDir) : 'default'
+    const servedByNginx = framework === 'react' || (framework === 'next' && nextOutput === 'export')
+    log(`Detected framework=${framework}, strategy=${buildStrategy}${framework === 'next' ? `, output=${nextOutput}` : ''}${seedCommand ? `, seed="${seedCommand}"` : ''}`, 'success')
+    const imageTag = `ghcr.io/${namespace}/${app!.name}:${shortSha}-${Date.now()}`
 
     log('Step 3/5 · Generate Dockerfile')
     const dockerfilePath = path.join(workDir, 'Dockerfile')
     if (fs.existsSync(dockerfilePath)) {
       log('Dockerfile already exists, skipping generation', 'success')
     } else {
-      const dockerfile = generateDockerfile(framework, buildStrategy, startCommand, hasPrisma, (app?.envVars as Record<string, string>) ?? {})
+      const dockerfile = generateDockerfile(framework, buildStrategy, startCommand, hasPrisma, (app?.envVars as Record<string, string>) ?? {}, nextOutput, seedCommand)
       fs.writeFileSync(dockerfilePath, dockerfile)
-      if (framework === 'react') {
+      if (servedByNginx) {
         fs.writeFileSync(path.join(workDir, 'nginx.conf'), generateNginxConf())
       }
       log('Dockerfile generated', 'success')
     }
 
     log('Step 4/5 · Build and push image (BuildKit)')
-    const viteBuildArgs = Object.fromEntries(
-      Object.entries((app?.envVars as Record<string, string>) ?? {}).filter(([k]) => k.startsWith('VITE_'))
-    )
+    const buildArgs = getBuildTimeEnv(framework, (app?.envVars as Record<string, string>) ?? {})
     await runBuildKitBuild({
       contextDir: workDir,
       imageTag,
       platform: 'linux/amd64',
-      buildArgs: viteBuildArgs,
+      buildArgs,
       onLog: (line) => log(stripAnsi(line))
     })
     log('Image built and pushed to GHCR', 'success')
 
-    const internalPort = getInternalPort(framework, app?.envVars as Record<string, string>)
+    const internalPort = getInternalPort(servedByNginx ? 'react' : framework, app?.envVars as Record<string, string>)
 
     await prisma.app.update({
       where: { id: appId },
