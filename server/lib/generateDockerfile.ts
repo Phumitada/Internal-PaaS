@@ -62,6 +62,11 @@ export const generateDockerfile = (
 ): string => {
   const prismaGenerateCmd = hasPrisma ? 'RUN npx prisma generate' : ''
   const prismaPrefix = prismaStartPrefix(hasPrisma, seedCommand)
+  // หลาย project มี postinstall: prisma generate -> ต้องมี schema/config ก่อน npm install
+  // prisma.config.* เป็น glob ได้เพราะ package.json match อยู่แล้ว ไม่มีไฟล์ config ก็ไม่ error
+  const depsCopy = hasPrisma
+    ? 'COPY package*.json prisma.config.* ./\n        COPY prisma ./prisma'
+    : 'COPY package*.json ./'
 
   if (framework === 'react') {
     const viteArgs = buildArgLines('react', envVars)
@@ -93,10 +98,10 @@ export const generateDockerfile = (
   if (framework === 'next') {
     const nextArgs = buildArgLines('next', envVars)
     const builderStage = `
-        FROM node:20-alpine AS builder
+        FROM node:22-alpine AS builder
         WORKDIR /app
         ENV NEXT_TELEMETRY_DISABLED=1
-        COPY package*.json ./
+        ${depsCopy}
         RUN npm install
         COPY . .
         ${prismaGenerateCmd}
@@ -114,7 +119,7 @@ ${nginxRuntimeStage('out')}`.trim()
     if (nextOutput === 'standalone' && !hasPrisma) {
       return `${builderStage}
 
-        FROM node:20-alpine
+        FROM node:22-alpine
         WORKDIR /app
         ENV NODE_ENV=production
         ENV NEXT_TELEMETRY_DISABLED=1
@@ -135,7 +140,7 @@ ${nginxRuntimeStage('out')}`.trim()
 
     return `${builderStage}
 
-        FROM node:20-alpine
+        FROM node:22-alpine
         WORKDIR /app
         ENV NODE_ENV=production
         ENV NEXT_TELEMETRY_DISABLED=1
@@ -162,15 +167,15 @@ ${nginxRuntimeStage('out')}`.trim()
         COPY --from=builder --chown=appuser:appgroup /app/dist ./dist`
 
     return `
-        FROM node:20-alpine AS builder
+        FROM node:22-alpine AS builder
         WORKDIR /app
-        COPY package*.json ./
+        ${depsCopy}
         RUN npm install
         COPY . .
         ${prismaGenerateCmd}
         RUN npm run build
 
-        FROM node:20-alpine
+        FROM node:22-alpine
         WORKDIR /app
         ENV NODE_ENV=production
         ENV PORT=3000
@@ -193,15 +198,15 @@ ${nginxRuntimeStage('out')}`.trim()
     switch (buildStrategy) {
       case 'build':
         return `
-        FROM node:20-alpine AS builder
+        FROM node:22-alpine AS builder
         WORKDIR /app
-        COPY package*.json ./
+        ${depsCopy}
         RUN npm install
         COPY . .
         ${prismaGenerateCmd}
         RUN npm run build
 
-        FROM node:20-alpine
+        FROM node:22-alpine
         WORKDIR /app
         ENV NODE_ENV=production
         ${hasPrisma
@@ -217,9 +222,9 @@ ${nginxRuntimeStage('out')}`.trim()
 
       case 'ts-node':
         return `
-          FROM node:20-alpine
+          FROM node:22-alpine
           WORKDIR /app
-          COPY package*.json ./
+          ${depsCopy}
           RUN npm install
           COPY . .
           ${prismaGenerateCmd}
@@ -232,10 +237,10 @@ ${nginxRuntimeStage('out')}`.trim()
 
       case 'node':
         return `
-          FROM node:20-alpine
+          FROM node:22-alpine
           WORKDIR /app
           ENV NODE_ENV=production
-          COPY package*.json ./
+          ${depsCopy}
           ${installCmd}
           COPY . .
           ${prismaGenerateCmd}
