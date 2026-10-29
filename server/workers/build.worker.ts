@@ -44,6 +44,9 @@ const detectNextOutput = (workDir: string): NextOutputMode => {
   return 'default'
 }
 
+// npm รัน script พวกนี้ระหว่าง npm install -> ถ้ามี ต้องมี source ก่อน install
+const INSTALL_LIFECYCLE_SCRIPTS = ['preinstall', 'install', 'postinstall', 'prepare']
+
 const PRISMA_CONFIG_FILES = ['prisma.config.ts', 'prisma.config.js', 'prisma.config.mjs', 'prisma.config.cjs']
 
 // หา seed: prisma config (package.json#prisma.seed หรือ prisma.config migrations.seed) -> prisma db seed
@@ -97,10 +100,11 @@ const worker = new Worker('build', async (job: Job<BuildJobData>) => {
 
     const startCommand = scripts.start || 'node index.js'
     const hasPrisma = fs.existsSync(path.join(workDir, 'prisma', 'schema.prisma'))
+    const hasInstallScripts = INSTALL_LIFECYCLE_SCRIPTS.some(name => scripts[name])
     const seedCommand = hasPrisma ? detectSeedCommand(workDir, packageJson) : null
     const nextOutput = framework === 'next' ? detectNextOutput(workDir) : 'default'
     const servedByNginx = framework === 'react' || (framework === 'next' && nextOutput === 'export')
-    log(`Detected framework=${framework}, strategy=${buildStrategy}${framework === 'next' ? `, output=${nextOutput}` : ''}${seedCommand ? `, seed="${seedCommand}"` : ''}`, 'success')
+    log(`Detected framework=${framework}, strategy=${buildStrategy}${framework === 'next' ? `, output=${nextOutput}` : ''}${seedCommand ? `, seed="${seedCommand}"` : ''}${hasInstallScripts ? ', install-scripts=yes' : ''}`, 'success')
     const imageTag = `ghcr.io/${namespace}/${app!.name}:${shortSha}-${Date.now()}`
 
     log('Step 3/5 · Generate Dockerfile')
@@ -108,7 +112,7 @@ const worker = new Worker('build', async (job: Job<BuildJobData>) => {
     if (fs.existsSync(dockerfilePath)) {
       log('Dockerfile already exists, skipping generation', 'success')
     } else {
-      const dockerfile = generateDockerfile(framework, buildStrategy, startCommand, hasPrisma, (app?.envVars as Record<string, string>) ?? {}, nextOutput, seedCommand)
+      const dockerfile = generateDockerfile(framework, buildStrategy, startCommand, hasPrisma, (app?.envVars as Record<string, string>) ?? {}, nextOutput, seedCommand, hasInstallScripts)
       fs.writeFileSync(dockerfilePath, dockerfile)
       if (servedByNginx) {
         fs.writeFileSync(path.join(workDir, 'nginx.conf'), generateNginxConf())

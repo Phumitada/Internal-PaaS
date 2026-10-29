@@ -58,15 +58,21 @@ export const generateDockerfile = (
   hasPrisma: boolean,
   envVars: Record<string, string> = {},
   nextOutput: NextOutputMode = 'default',
-  seedCommand: string | null = null
+  seedCommand: string | null = null,
+  hasInstallScripts: boolean = false
 ): string => {
   const prismaGenerateCmd = hasPrisma ? 'RUN npx prisma generate' : ''
   const prismaPrefix = prismaStartPrefix(hasPrisma, seedCommand)
-  // หลาย project มี postinstall: prisma generate -> ต้องมี schema/config ก่อน npm install
+  // postinstall/prepare มักเรียกไฟล์ใน repo (เช่น prisma generate, scripts/*.mjs) -> ต้อง copy source ทั้งหมดก่อน npm install
+  // ไม่มี install script แต่มี prisma -> copy แค่ schema/config ไว้ก่อน เพื่อให้ layer npm install ยัง cache ได้
   // prisma.config.* เป็น glob ได้เพราะ package.json match อยู่แล้ว ไม่มีไฟล์ config ก็ไม่ error
-  const depsCopy = hasPrisma
-    ? 'COPY package*.json prisma.config.* ./\n        COPY prisma ./prisma'
-    : 'COPY package*.json ./'
+  const depsCopy = hasInstallScripts
+    ? 'COPY . .'
+    : hasPrisma
+      ? 'COPY package*.json prisma.config.* ./\n        COPY prisma ./prisma'
+      : 'COPY package*.json ./'
+  // runtime stage ที่ npm install ใหม่จะรัน install script โดยไม่มี source -> ใช้ /app จาก builder แทน
+  const keepBuilderApp = hasPrisma || hasInstallScripts
 
   if (framework === 'react') {
     const viteArgs = buildArgLines('react', envVars)
@@ -74,7 +80,7 @@ export const generateDockerfile = (
     return `
         FROM node:22-alpine AS builder
         WORKDIR /app
-        COPY package.json package-lock.json ./
+        ${hasInstallScripts ? 'COPY . .' : 'COPY package.json package-lock.json ./'}
         RUN npm ci
         COPY . .
         ${viteArgs}
@@ -160,7 +166,7 @@ ${nginxRuntimeStage('out')}`.trim()
     const startCmd = `CMD ["sh", "-c", "${prismaPrefix}${nodeStart}"]`
 
     // มี prisma -> ต้องมี prisma CLI + schema/migrations (+ seed runner อย่าง tsx) ตอน runtime เลย copy ทั้ง /app จาก builder
-    const runtimeFiles = hasPrisma
+    const runtimeFiles = keepBuilderApp
       ? 'COPY --from=builder --chown=appuser:appgroup /app ./'
       : `COPY package*.json ./
         RUN npm install --omit=dev
@@ -209,7 +215,7 @@ ${nginxRuntimeStage('out')}`.trim()
         FROM node:22-alpine
         WORKDIR /app
         ENV NODE_ENV=production
-        ${hasPrisma
+        ${keepBuilderApp
           ? 'COPY --from=builder /app ./'
           : `COPY package*.json ./
         RUN npm install --production
